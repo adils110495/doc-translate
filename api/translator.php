@@ -348,21 +348,23 @@ class DocumentTranslator {
             $run = $dom->createElementNS($nsUri, 'w:r');
             $runProps = $dom->createElementNS($nsUri, 'w:rPr');
 
-            // Add formatting for highlighted words (fixed words get bold+blue+underline, airlines just get blue+underline)
+            // Add formatting for highlighted words
             if ($segment['highlight']) {
                 if ($segment['type'] === 'fixed') {
-                    // Fixed words: bold + blue + underline
+                    // Fixed words: always bold
                     $bold = $dom->createElementNS($nsUri, 'w:b');
                     $runProps->appendChild($bold);
                 }
-                // Both get blue color and underline
-                $color = $dom->createElementNS($nsUri, 'w:color');
-                $color->setAttribute('w:val', '0000FF');
-                $runProps->appendChild($color);
+                // Blue color and underline only when links are enabled
+                if ($includeLinks) {
+                    $color = $dom->createElementNS($nsUri, 'w:color');
+                    $color->setAttribute('w:val', '0000FF');
+                    $runProps->appendChild($color);
 
-                $underline = $dom->createElementNS($nsUri, 'w:u');
-                $underline->setAttribute('w:val', 'single');
-                $runProps->appendChild($underline);
+                    $underline = $dom->createElementNS($nsUri, 'w:u');
+                    $underline->setAttribute('w:val', 'single');
+                    $runProps->appendChild($underline);
+                }
             }
 
             $run->appendChild($runProps);

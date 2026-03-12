@@ -164,7 +164,7 @@
 
                 <div class="form-group">
                     <label class="checkbox-label">
-                        <input type="checkbox" id="include-links" name="include_links" value="1" checked>
+                        <input type="checkbox" id="include-links" name="include_links" value="1">
                         <span>Include hyperlinks in document</span>
                     </label>
                     <small>When enabled, keywords and airline names will have clickable links</small>
