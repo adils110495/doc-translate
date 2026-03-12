@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document Translation</title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?php echo filemtime(__DIR__ . '/assets/css/style.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -17,6 +17,9 @@
                 <div class="header-actions">
                     <button class="refresh-btn icon-btn" onclick="loadTranslatedFiles()" title="Refresh">
                         <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button class="icon-btn" onclick="openManageHidden()" title="Manage Hidden Items">
+                        <i class="fas fa-eye-slash"></i>
                     </button>
                     <button class="log-btn icon-btn" onclick="toggleLogViewer()" title="View Logs">
                         <i class="fas fa-file-alt"></i>
@@ -31,6 +34,16 @@
                 <button class="btn-delete" onclick="bulkDelete()">
                     <i class="fas fa-trash"></i> Delete Selected
                 </button>
+            </div>
+
+            <div class="filter-bar">
+                <select id="filter-project" onchange="onProjectFilterChange()">
+                    <option value="">All Projects</option>
+                </select>
+                <select id="filter-topic" onchange="applyFilters()">
+                    <option value="">All Topics</option>
+                </select>
+                <input type="text" id="filter-file" placeholder="Filter by file..." oninput="applyFilters()">
             </div>
 
             <div id="files-container" class="files-container">
@@ -60,6 +73,22 @@
                         </div>
                         <div id="log-content" class="log-content">
                             <p class="loading">Loading logs...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Manage Hidden Items Modal -->
+            <div id="manage-hidden-modal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3><i class="fas fa-eye-slash"></i> Manage Hidden Items</h3>
+                        <button class="close-btn" onclick="closeManageHidden()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="hidden-items-list">
+                            <p class="loading">Loading...</p>
                         </div>
                     </div>
                 </div>
@@ -133,6 +162,14 @@
                     <input type="text" id="topic-name" name="topic_name" placeholder="e.g., Legal" required>
                 </div>
 
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="include-links" name="include_links" value="1" checked>
+                        <span>Include hyperlinks in document</span>
+                    </label>
+                    <small>When enabled, keywords and airline names will have clickable links</small>
+                </div>
+
                 <button type="submit" class="btn-submit">
                     <i class="fas fa-language"></i> Translate Document
                 </button>
@@ -153,6 +190,6 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-    <script src="assets/js/script.js"></script>
+    <script src="assets/js/script.js?v=<?php echo filemtime(__DIR__ . '/assets/js/script.js'); ?>"></script>
 </body>
 </html>

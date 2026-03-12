@@ -1,3 +1,6 @@
+// Cached files data for client-side filtering
+let cachedFilesData = null;
+
 // Toast notification configuration
 toastr.options = {
     "closeButton": true,
@@ -212,7 +215,9 @@ function loadTranslatedFiles() {
                 const data = typeof response === 'string' ? JSON.parse(response) : response;
 
                 if (data.success) {
-                    displayFiles(data.files);
+                    cachedFilesData = data.files;
+                    populateProjectDropdown();
+                    applyFilters();
                 } else {
                     $('#files-container').html('<p class="loading">' + (data.message || 'No files found') + '</p>');
                 }
@@ -224,6 +229,83 @@ function loadTranslatedFiles() {
             $('#files-container').html('<p class="loading">Error loading files</p>');
         }
     });
+}
+
+// Populate project dropdown from cached data
+function populateProjectDropdown() {
+    const select = $('#filter-project');
+    const current = select.val();
+    select.empty().append('<option value="">All Projects</option>');
+    if (cachedFilesData) {
+        Object.keys(cachedFilesData).sort().forEach(function(p) {
+            select.append('<option value="' + escapeHtml(p) + '">' + escapeHtml(p) + '</option>');
+        });
+    }
+    select.val(current);
+    populateTopicDropdown();
+}
+
+// Populate topic dropdown based on selected project
+function populateTopicDropdown() {
+    const select = $('#filter-topic');
+    const current = select.val();
+    const selectedProject = $('#filter-project').val();
+    select.empty().append('<option value="">All Topics</option>');
+    if (cachedFilesData) {
+        const projects = selectedProject ? [selectedProject] : Object.keys(cachedFilesData);
+        const topics = new Set();
+        projects.forEach(function(p) {
+            if (cachedFilesData[p]) Object.keys(cachedFilesData[p]).forEach(function(t) { topics.add(t); });
+        });
+        Array.from(topics).sort().forEach(function(t) {
+            select.append('<option value="' + escapeHtml(t) + '">' + escapeHtml(t) + '</option>');
+        });
+    }
+    select.val(current);
+}
+
+// When project filter changes, update topic dropdown then filter
+function onProjectFilterChange() {
+    populateTopicDropdown();
+    applyFilters();
+}
+
+// Apply project/topic/file filters to cached data
+function applyFilters() {
+    if (!cachedFilesData) return;
+
+    const projectFilter = $('#filter-project').val() || '';
+    const topicFilter = $('#filter-topic').val() || '';
+    const fileFilter = ($('#filter-file').val() || '').toLowerCase().trim();
+
+    if (!projectFilter && !topicFilter && !fileFilter) {
+        displayFiles(cachedFilesData);
+        return;
+    }
+
+    const filtered = {};
+    for (const project in cachedFilesData) {
+        if (projectFilter && project !== projectFilter) continue;
+
+        const filteredTopics = {};
+        for (const topic in cachedFilesData[project]) {
+            if (topicFilter && topic !== topicFilter) continue;
+
+            const filteredFiles = cachedFilesData[project][topic].filter(function(file) {
+                return !fileFilter || file.name.toLowerCase().includes(fileFilter);
+            });
+
+            if (filteredFiles.length > 0) {
+                filteredTopics[topic] = filteredFiles;
+            }
+        }
+
+        if (Object.keys(filteredTopics).length > 0) {
+            filtered[project] = filteredTopics;
+        }
+    }
+
+    displayFiles(filtered);
 }
 
 // Display files grouped by project and topic
@@ -238,12 +320,18 @@ function displayFiles(files) {
     // Group files by project
     for (const project in files) {
         html += '<div class="project-group">';
-        html += '<div class="project-title">' + escapeHtml(project) + '</div>';
+        html += '<div class="project-title">';
+        html += '<span>' + escapeHtml(project) + '</span>';
+        html += '<button style="margin-left:8px;background:#95a5a6;color:white;border:none;border-radius:3px;padding:2px 8px;font-size:11px;cursor:pointer;" onmouseover="this.style.background=\'#e74c3c\'" onmouseout="this.style.background=\'#95a5a6\'" onclick="hideItem(\'project\', \'' + escapeHtml(project) + '\')" title="Hide project"><i class="fas fa-eye-slash"></i></button>';
+        html += '</div>';
 
         // Group by topic within project
         for (const topic in files[project]) {
             html += '<div class="topic-group">';
-            html += '<div class="topic-title">' + escapeHtml(topic) + '</div>';
+            html += '<div class="topic-title">';
+            html += '<span>' + escapeHtml(topic) + '</span>';
+            html += '<button style="margin-left:8px;background:#95a5a6;color:white;border:none;border-radius:3px;padding:2px 8px;font-size:11px;cursor:pointer;" onmouseover="this.style.background=\'#e74c3c\'" onmouseout="this.style.background=\'#95a5a6\'" onclick="hideItem(\'topic\', \'' + escapeHtml(topic) + '\')" title="Hide topic"><i class="fas fa-eye-slash"></i></button>';
+            html += '</div>';
 
             // Display files
             files[project][topic].forEach(function(file) {
@@ -271,6 +359,112 @@ function displayFiles(files) {
     }
 
     $('#files-container').html(html);
+}
+
+// Hide a project or topic
+function hideItem(type, name) {
+    if (!confirm('Hide ' + type + ' "' + name + '"? You can unhide it from the manage hidden panel.')) return;
+
+    $.ajax({
+        url: 'api/toggle_hidden.php',
+        type: 'POST',
+        data: JSON.stringify({ action: 'hide', type: type, name: name }),
+        contentType: 'application/json',
+        success: function(response) {
+            try {
+                const data = typeof response === 'string' ? JSON.parse(response) : response;
+                if (data.success) {
+                    toastr.success(type.charAt(0).toUpperCase() + type.slice(1) + ' "' + name + '" hidden');
+                    loadTranslatedFiles();
+                } else {
+                    toastr.error(data.message || 'Failed to hide ' + type);
+                }
+            } catch(e) {
+                toastr.error('Error processing response');
+            }
+        },
+        error: function() { toastr.error('Failed to hide ' + type); }
+    });
+}
+
+// Unhide a project or topic
+function unhideItem(type, name) {
+    $.ajax({
+        url: 'api/toggle_hidden.php',
+        type: 'POST',
+        data: JSON.stringify({ action: 'unhide', type: type, name: name }),
+        contentType: 'application/json',
+        success: function(response) {
+            try {
+                const data = typeof response === 'string' ? JSON.parse(response) : response;
+                if (data.success) {
+                    toastr.success(type.charAt(0).toUpperCase() + type.slice(1) + ' "' + name + '" is now visible');
+                    loadHiddenModal();
+                    loadTranslatedFiles();
+                } else {
+                    toastr.error(data.message || 'Failed to unhide ' + type);
+                }
+            } catch(e) {
+                toastr.error('Error processing response');
+            }
+        },
+        error: function() { toastr.error('Failed to unhide ' + type); }
+    });
+}
+
+// Open manage hidden items modal
+function openManageHidden() {
+    $('#manage-hidden-modal').fadeIn(300);
+    loadHiddenModal();
+}
+
+function closeManageHidden() {
+    $('#manage-hidden-modal').fadeOut(300);
+}
+
+function loadHiddenModal() {
+    $.ajax({
+        url: 'api/toggle_hidden.php',
+        type: 'GET',
+        success: function(response) {
+            try {
+                const data = typeof response === 'string' ? JSON.parse(response) : response;
+                if (data.success) renderHiddenModal(data.hidden);
+            } catch(e) {}
+        }
+    });
+}
+
+function renderHiddenModal(hidden) {
+    const projects = hidden.projects || [];
+    const topics   = hidden.topics   || [];
+
+    let html = '';
+
+    if (projects.length === 0 && topics.length === 0) {
+        html = '<p class="loading">No hidden projects or topics.</p>';
+    } else {
+        if (projects.length > 0) {
+            html += '<div class="hidden-section-title">Hidden Projects</div>';
+            projects.forEach(function(p) {
+                html += '<div class="hidden-item">';
+                html += '<span>' + escapeHtml(p) + '</span>';
+                html += '<button class="icon-btn btn-unhide" onclick="unhideItem(\'project\', \'' + escapeHtml(p) + '\')" title="Unhide"><i class="fas fa-eye"></i></button>';
+                html += '</div>';
+            });
+        }
+        if (topics.length > 0) {
+            html += '<div class="hidden-section-title">Hidden Topics</div>';
+            topics.forEach(function(t) {
+                html += '<div class="hidden-item">';
+                html += '<span>' + escapeHtml(t) + '</span>';
+                html += '<button class="icon-btn btn-unhide" onclick="unhideItem(\'topic\', \'' + escapeHtml(t) + '\')" title="Unhide"><i class="fas fa-eye"></i></button>';
+                html += '</div>';
+            });
+        }
+    }
+
+    $('#hidden-items-list').html(html);
 }
 
 // Download single file

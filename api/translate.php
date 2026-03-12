@@ -45,6 +45,7 @@ try {
     $targetLanguage = sanitizeInput($_POST['target_language']);
     $projectName = sanitizeInput($_POST['project_name']);
     $topicName = sanitizeInput($_POST['topic_name']);
+    $includeLinks = isset($_POST['include_links']) && $_POST['include_links'] === '1';
 
     // Validate directory names
     if (!isValidDirectoryName($projectName) || !isValidDirectoryName($topicName)) {
@@ -150,7 +151,8 @@ try {
     $translationSuccess = $translator->translate(
         $originalPath,
         $translatedPath,
-        $targetLanguage
+        $targetLanguage,
+        $includeLinks
     );
 
     if (!$translationSuccess) {

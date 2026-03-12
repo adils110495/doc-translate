@@ -4,7 +4,7 @@
  * Document Translator
  * Translates DOCX documents using DeepL API while preserving layout and formatting
  * Uses paragraph-level translation for better context
- * Applies bold formatting and hyperlinks to fixed words
+ * Applies bold formatting and hyperlinks to fixed words and airline names
  */
 class DocumentTranslator {
 
@@ -13,6 +13,7 @@ class DocumentTranslator {
     private $translator;
     private $fixedWords = [];
     private $fixedWordsLinks = [];
+    private $airlinesLinks = [];
     private $relationshipId = 1000;
 
     public function __construct() {
@@ -20,6 +21,7 @@ class DocumentTranslator {
         $this->loadEnv();
         $this->loadFixedWords();
         $this->loadFixedWordsLinks();
+        $this->loadAirlinesLinks();
 
         $this->deeplApiKey = getenv('DEEPL_API_KEY');
         $this->deeplApiUrl = getenv('DEEPL_API_URL') ?: 'https://api-free.deepl.com';
@@ -91,6 +93,17 @@ class DocumentTranslator {
         }
     }
 
+    private function loadAirlinesLinks() {
+        $airlinesFile = dirname(__DIR__) . '/airlines-links.json';
+        if (file_exists($airlinesFile)) {
+            $content = file_get_contents($airlinesFile);
+            $data = json_decode($content, true);
+            if ($data) {
+                $this->airlinesLinks = $data;
+            }
+        }
+    }
+
     private function getFixedWordsForLanguage($languageCode) {
         $langCode = strtolower($languageCode);
         if (strpos($langCode, '-') !== false) {
@@ -103,7 +116,7 @@ class DocumentTranslator {
         foreach ($this->fixedWords as $term => $translations) {
             if (isset($translations[$langCode]) && is_array($translations[$langCode])) {
                 foreach ($translations[$langCode] as $word) {
-                    $words[$word] = $term;
+                    $words[$word] = ['term' => $term, 'type' => 'fixed'];
                 }
             }
         }
@@ -111,6 +124,36 @@ class DocumentTranslator {
             return strlen($b) - strlen($a);
         });
         return $words;
+    }
+
+    private function getAirlinesForLanguage($languageCode) {
+        $langCode = strtolower($languageCode);
+        if (strpos($langCode, '-') !== false) {
+            $langCode = explode('-', $langCode)[0];
+        }
+        if ($langCode === 'nb') {
+            $langCode = 'no';
+        }
+        if ($langCode === 'et') {
+            $langCode = 'ee';
+        }
+        
+        $airlines = [];
+        if (isset($this->airlinesLinks[$langCode]) && is_array($this->airlinesLinks[$langCode])) {
+            foreach ($this->airlinesLinks[$langCode] as $airline) {
+                if (isset($airline['text']) && isset($airline['link'])) {
+                    $airlines[$airline['text']] = [
+                        'term' => $airline['text'],
+                        'type' => 'airline',
+                        'link' => $airline['link']
+                    ];
+                }
+            }
+        }
+        uksort($airlines, function($a, $b) {
+            return strlen($b) - strlen($a);
+        });
+        return $airlines;
     }
 
     private function getLinkForTerm($term, $languageCode) {
@@ -128,7 +171,7 @@ class DocumentTranslator {
         return null;
     }
 
-    public function translate($sourcePath, $targetPath, $targetLanguage) {
+    public function translate($sourcePath, $targetPath, $targetLanguage, $includeLinks = true) {
         try {
             if (!copy($sourcePath, $targetPath)) {
                 return false;
@@ -208,7 +251,15 @@ class DocumentTranslator {
                 return false;
             }
 
+            // Get fixed words and airlines for the target language
             $fixedWords = $this->getFixedWordsForLanguage($targetLanguage);
+            $airlines = $this->getAirlinesForLanguage($targetLanguage);
+            
+            // Merge both into single lookup (airlines first, then fixed words - longer matches first)
+            $allKeywords = array_merge($airlines, $fixedWords);
+            uksort($allKeywords, function($a, $b) {
+                return strlen($b) - strlen($a);
+            });
 
             foreach ($paragraphMapping as $index => $mapping) {
                 if (!isset($translatedParagraphs[$index])) continue;
@@ -217,7 +268,7 @@ class DocumentTranslator {
                 $nodes = $mapping['nodes'];
                 $paragraph = $mapping['paragraph'];
 
-                $this->applyTranslationWithLinks($dom, $xpath, $paragraph, $nodes, $translatedText, $fixedWords, $targetLanguage, $newRelationships);
+                $this->applyTranslationWithLinks($dom, $xpath, $paragraph, $nodes, $translatedText, $allKeywords, $targetLanguage, $newRelationships, $includeLinks);
             }
 
             foreach ($newRelationships as $relId => $url) {
@@ -257,20 +308,20 @@ class DocumentTranslator {
         }
     }
 
-    private function applyTranslationWithLinks($dom, $xpath, $paragraph, $nodes, $translatedText, $fixedWords, $targetLanguage, &$newRelationships) {
-        $segments = $this->splitTextByFixedWords($translatedText, $fixedWords);
+    private function applyTranslationWithLinks($dom, $xpath, $paragraph, $nodes, $translatedText, $allKeywords, $targetLanguage, &$newRelationships, $includeLinks = true) {
+        $segments = $this->splitTextByKeywords($translatedText, $allKeywords, $targetLanguage);
 
-        // Check if any fixed words were found
-        $hasFixedWords = false;
+        // Check if any keywords were found
+        $hasKeywords = false;
         foreach ($segments as $segment) {
-            if ($segment['bold']) {
-                $hasFixedWords = true;
+            if ($segment['highlight']) {
+                $hasKeywords = true;
                 break;
             }
         }
 
-        // If no fixed words, just replace text in existing nodes (preserves formatting)
-        if (!$hasFixedWords) {
+        // If no keywords, just replace text in existing nodes (preserves formatting)
+        if (!$hasKeywords) {
             if (count($nodes) > 0) {
                 $nodes[0]->nodeValue = $translatedText;
                 for ($i = 1; $i < count($nodes); $i++) {
@@ -297,54 +348,51 @@ class DocumentTranslator {
             $run = $dom->createElementNS($nsUri, 'w:r');
             $runProps = $dom->createElementNS($nsUri, 'w:rPr');
 
-            // ONLY add bold/color/underline for fixed words
-            if ($segment['bold']) {
-                $bold = $dom->createElementNS($nsUri, 'w:b');
-                $runProps->appendChild($bold);
-                
+            // Add formatting for highlighted words (fixed words get bold+blue+underline, airlines just get blue+underline)
+            if ($segment['highlight']) {
+                if ($segment['type'] === 'fixed') {
+                    // Fixed words: bold + blue + underline
+                    $bold = $dom->createElementNS($nsUri, 'w:b');
+                    $runProps->appendChild($bold);
+                }
+                // Both get blue color and underline
                 $color = $dom->createElementNS($nsUri, 'w:color');
                 $color->setAttribute('w:val', '0000FF');
                 $runProps->appendChild($color);
-                
+
                 $underline = $dom->createElementNS($nsUri, 'w:u');
                 $underline->setAttribute('w:val', 'single');
                 $runProps->appendChild($underline);
             }
-            // For non-fixed words, runProps stays empty (no formatting = default/normal text)
 
             $run->appendChild($runProps);
-            
+
             $text = $dom->createElementNS($nsUri, 'w:t');
             $text->nodeValue = $segment['text'];
             $text->setAttribute('xml:space', 'preserve');
             $run->appendChild($text);
 
-            // Wrap in hyperlink if fixed word has a link
-            if ($segment['bold'] && isset($segment['term'])) {
-                $link = $this->getLinkForTerm($segment['term'], $targetLanguage);
-                if ($link) {
-                    $relId = 'rId' . $this->relationshipId++;
-                    $newRelationships[$relId] = $link;
+            // Wrap in hyperlink if keyword has a link and links are enabled
+            if ($includeLinks && $segment['highlight'] && isset($segment['link']) && $segment['link']) {
+                $relId = 'rId' . $this->relationshipId++;
+                $newRelationships[$relId] = $segment['link'];
 
-                    $hyperlink = $dom->createElementNS($nsUri, 'w:hyperlink');
-                    $hyperlink->setAttributeNS($rNsUri, 'r:id', $relId);
-                    $hyperlink->appendChild($run);
-                    $paragraph->appendChild($hyperlink);
-                } else {
-                    $paragraph->appendChild($run);
-                }
+                $hyperlink = $dom->createElementNS($nsUri, 'w:hyperlink');
+                $hyperlink->setAttributeNS($rNsUri, 'r:id', $relId);
+                $hyperlink->appendChild($run);
+                $paragraph->appendChild($hyperlink);
             } else {
                 $paragraph->appendChild($run);
             }
         }
     }
 
-    private function splitTextByFixedWords($text, $fixedWords) {
-        if (empty($fixedWords) || empty($text)) {
-            return [['text' => $text, 'bold' => false, 'term' => null]];
+    private function splitTextByKeywords($text, $allKeywords, $targetLanguage) {
+        if (empty($allKeywords) || empty($text)) {
+            return [['text' => $text, 'highlight' => false, 'type' => null, 'link' => null]];
         }
 
-        $wordList = array_keys($fixedWords);
+        $wordList = array_keys($allKeywords);
         
         $patterns = [];
         foreach ($wordList as $word) {
@@ -356,19 +404,31 @@ class DocumentTranslator {
 
         $segments = [];
         foreach ($parts as $part) {
-            $isBold = false;
-            $term = null;
-            foreach ($fixedWords as $word => $termKey) {
+            $isHighlight = false;
+            $type = null;
+            $link = null;
+            
+            foreach ($allKeywords as $word => $info) {
                 if (mb_strtolower($part) === mb_strtolower($word)) {
-                    $isBold = true;
-                    $term = $termKey;
+                    $isHighlight = true;
+                    $type = $info['type'];
+                    
+                    // Get link based on type
+                    if ($type === 'airline' && isset($info['link'])) {
+                        $link = $info['link'];
+                    } elseif ($type === 'fixed' && isset($info['term'])) {
+                        // Get the link for fixed words using the term and target language
+                        $link = $this->getLinkForTerm($info['term'], $targetLanguage);
+                    }
                     break;
                 }
             }
+            
             $segments[] = [
                 'text' => $part,
-                'bold' => $isBold,
-                'term' => $term
+                'highlight' => $isHighlight,
+                'type' => $type,
+                'link' => $link
             ];
         }
 

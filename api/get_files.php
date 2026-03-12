@@ -2,6 +2,18 @@
 header('Content-Type: application/json');
 require_once __DIR__ . '/config.php';
 
+// Load hidden items config
+$hiddenItems = ['projects' => [], 'topics' => []];
+$hiddenFile = dirname(__DIR__) . '/hidden-items.json';
+if (file_exists($hiddenFile)) {
+    $hiddenData = json_decode(file_get_contents($hiddenFile), true);
+    if ($hiddenData) {
+        $hiddenItems = $hiddenData;
+    }
+}
+$hiddenProjects = array_map('strtolower', $hiddenItems['projects'] ?? []);
+$hiddenTopics = array_map('strtolower', $hiddenItems['topics'] ?? []);
+
 try {
     if (!is_dir(TRANSLATED_DIR)) {
         echo json_encode([
@@ -23,6 +35,11 @@ try {
             continue;
         }
 
+        // Skip hidden projects
+        if (in_array(strtolower($project), $hiddenProjects)) {
+            continue;
+        }
+
         $files[$project] = [];
 
         // Scan topics within project
@@ -32,6 +49,11 @@ try {
             $topicPath = $projectPath . '/' . $topic;
 
             if (!is_dir($topicPath)) {
+                continue;
+            }
+
+            // Skip hidden topics
+            if (in_array(strtolower($topic), $hiddenTopics)) {
                 continue;
             }
 
