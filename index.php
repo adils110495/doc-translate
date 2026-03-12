@@ -170,6 +170,14 @@
                     <small>When enabled, keywords and airline names will have clickable links</small>
                 </div>
 
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="bold-fixed-words" name="bold_fixed_words" value="1">
+                        <span>Bold fixed words</span>
+                    </label>
+                    <small>When enabled, fixed/keyword terms will be formatted in bold</small>
+                </div>
+
                 <button type="submit" class="btn-submit">
                     <i class="fas fa-language"></i> Translate Document
                 </button>

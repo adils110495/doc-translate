@@ -171,7 +171,7 @@ class DocumentTranslator {
         return null;
     }
 
-    public function translate($sourcePath, $targetPath, $targetLanguage, $includeLinks = true) {
+    public function translate($sourcePath, $targetPath, $targetLanguage, $includeLinks = true, $boldFixedWords = true) {
         try {
             if (!copy($sourcePath, $targetPath)) {
                 return false;
@@ -268,7 +268,7 @@ class DocumentTranslator {
                 $nodes = $mapping['nodes'];
                 $paragraph = $mapping['paragraph'];
 
-                $this->applyTranslationWithLinks($dom, $xpath, $paragraph, $nodes, $translatedText, $allKeywords, $targetLanguage, $newRelationships, $includeLinks);
+                $this->applyTranslationWithLinks($dom, $xpath, $paragraph, $nodes, $translatedText, $allKeywords, $targetLanguage, $newRelationships, $includeLinks, $boldFixedWords);
             }
 
             foreach ($newRelationships as $relId => $url) {
@@ -308,7 +308,7 @@ class DocumentTranslator {
         }
     }
 
-    private function applyTranslationWithLinks($dom, $xpath, $paragraph, $nodes, $translatedText, $allKeywords, $targetLanguage, &$newRelationships, $includeLinks = true) {
+    private function applyTranslationWithLinks($dom, $xpath, $paragraph, $nodes, $translatedText, $allKeywords, $targetLanguage, &$newRelationships, $includeLinks = true, $boldFixedWords = true) {
         $segments = $this->splitTextByKeywords($translatedText, $allKeywords, $targetLanguage);
 
         // Check if any keywords were found
@@ -350,8 +350,7 @@ class DocumentTranslator {
 
             // Add formatting for highlighted words
             if ($segment['highlight']) {
-                if ($segment['type'] === 'fixed') {
-                    // Fixed words: always bold
+                if ($segment['type'] === 'fixed' && $boldFixedWords) {
                     $bold = $dom->createElementNS($nsUri, 'w:b');
                     $runProps->appendChild($bold);
                 }

@@ -46,6 +46,7 @@ try {
     $projectName = sanitizeInput($_POST['project_name']);
     $topicName = sanitizeInput($_POST['topic_name']);
     $includeLinks = isset($_POST['include_links']) && $_POST['include_links'] === '1';
+    $boldFixedWords = isset($_POST['bold_fixed_words']) && $_POST['bold_fixed_words'] === '1';
 
     // Validate directory names
     if (!isValidDirectoryName($projectName) || !isValidDirectoryName($topicName)) {
@@ -152,7 +153,8 @@ try {
         $originalPath,
         $translatedPath,
         $targetLanguage,
-        $includeLinks
+        $includeLinks,
+        $boldFixedWords
     );
 
     if (!$translationSuccess) {
