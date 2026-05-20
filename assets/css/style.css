@@ -722,3 +722,238 @@ body {
 .log-content::-webkit-scrollbar-thumb:hover {
     background: #95a5a6;
 }
+
+/* ─── Language Multi-Select (form) ──────────────────────────────────────────── */
+
+.lang-multiselect {
+    position: relative;
+    width: 100%;
+}
+
+.lang-multiselect-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    cursor: pointer;
+    background: white;
+    min-height: 46px;
+    gap: 8px;
+    transition: border-color 0.2s;
+    user-select: none;
+}
+
+.lang-multiselect-trigger:hover {
+    border-color: #3498db;
+}
+
+#lang-selected-display {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+    min-height: 22px;
+}
+
+.lang-placeholder {
+    color: #aaa;
+    font-size: 14px;
+}
+
+.lang-tag {
+    display: inline-flex;
+    align-items: center;
+    background: #3498db;
+    color: white;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+.lang-tag-more {
+    background: #7f8c8d;
+}
+
+#lang-arrow {
+    color: #7f8c8d;
+    font-size: 12px;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+
+#lang-arrow.open {
+    transform: rotate(180deg);
+}
+
+.lang-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: white;
+    border: 2px solid #3498db;
+    border-radius: 5px;
+    z-index: 500;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.lang-dropdown.open {
+    display: block;
+}
+
+.lang-search-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-bottom: 1px solid #ecf0f1;
+}
+
+.lang-search-wrap i {
+    color: #bbb;
+    font-size: 13px;
+}
+
+.lang-search-wrap input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 13px;
+    color: #333;
+    background: transparent;
+}
+
+.lang-select-all-row {
+    border-bottom: 1px solid #ecf0f1;
+    background: #fafbfc;
+}
+
+.lang-select-all-item {
+    font-weight: 600 !important;
+    color: #2c3e50 !important;
+}
+
+.lang-options-list {
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 4px 0;
+}
+
+.lang-options-list::-webkit-scrollbar { width: 6px; }
+.lang-options-list::-webkit-scrollbar-track { background: #f1f1f1; }
+.lang-options-list::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+
+.lang-option-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #333;
+    font-weight: normal;
+    transition: background 0.1s;
+    margin: 0;
+}
+
+.lang-option-item:hover {
+    background: #f0f7ff;
+}
+
+.lang-option-item input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin: 0;
+    accent-color: #3498db;
+}
+
+/* ─── Document Group (file list) ────────────────────────────────────────────── */
+
+.doc-group {
+    margin: 8px 0 8px 20px;
+    border: 1px solid #dde3ea;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.doc-group-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    background: #eaf1fb;
+    border-bottom: 1px solid #dde3ea;
+}
+
+.doc-icon {
+    color: #2b5fc9;
+    font-size: 15px;
+    flex-shrink: 0;
+}
+
+.doc-group-name {
+    flex: 1;
+    font-weight: 600;
+    font-size: 13px;
+    color: #1e3a5f;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.doc-lang-badge {
+    background: #2b5fc9;
+    color: white;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* ─── Language Tabs (file list) ──────────────────────────────────────────────── */
+
+.lang-tabs-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 8px 10px 6px;
+    background: #f0f4f8;
+    border-top: 1px solid #e0e7ee;
+    border-bottom: 1px solid #e0e7ee;
+    margin-bottom: 4px;
+}
+
+.lang-tab {
+    padding: 4px 12px;
+    border: 1px solid #c5d5e8;
+    border-radius: 20px;
+    background: white;
+    color: #555;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    line-height: 1.4;
+}
+
+.lang-tab:hover {
+    border-color: #3498db;
+    color: #3498db;
+    background: #f0f7ff;
+}
+
+.lang-tab.active {
+    background: #3498db;
+    border-color: #3498db;
+    color: white;
+    font-weight: 500;
+}

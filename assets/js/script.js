@@ -12,80 +12,150 @@ toastr.options = {
 
 // Language code to full name mapping
 const languageNames = {
-    'EN-US': 'English',
-    'DA': 'Danish',
-    'NL': 'Dutch',
-    'ET': 'Estonian',
-    'FI': 'Finnish',
-    'DE': 'German',
-    'IS': 'Icelandic',
-    'LV': 'Latvian',
-    'NB': 'Norwegian',
-    'RO': 'Romanian',
-    'RU': 'Russian',
-    'SV': 'Swedish'
+    'AR':    'Arabic',
+    'HY':    'Armenian',
+    'BS':    'Bosnian',
+    'BG':    'Bulgarian',
+    'CA':    'Catalan',
+    'ZH':    'Chinese (Simplified)',
+    'HR':    'Croatian',
+    'CS':    'Czech',
+    'DA':    'Danish',
+    'NL':    'Dutch',
+    'EN-US': 'English (US)',
+    'EN-GB': 'English (UK)',
+    'ET':    'Estonian',
+    'FI':    'Finnish',
+    'FR':    'French',
+    'KA':    'Georgian',
+    'DE':    'German',
+    'EL':    'Greek',
+    'HE':    'Hebrew',
+    'HU':    'Hungarian',
+    'IS':    'Icelandic',
+    'IT':    'Italian',
+    'LV':    'Latvian',
+    'LT':    'Lithuanian',
+    'MK':    'Macedonian',
+    'NB':    'Norwegian',
+    'PL':    'Polish',
+    'PT-PT': 'Portuguese (Portugal)',
+    'PT-BR': 'Portuguese (Brazil)',
+    'RO':    'Romanian',
+    'RU':    'Russian',
+    'SR':    'Serbian',
+    'SK':    'Slovak',
+    'SL':    'Slovenian',
+    'ES':    'Spanish',
+    'SV':    'Swedish',
+    'TR':    'Turkish',
+    'UK':    'Ukrainian'
 };
 
-// Get full language name from code
+// All languages sorted alphabetically by display name
+const allLanguages = Object.entries(languageNames)
+    .map(([code, name]) => ({ code, name }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
 function getLanguageName(code) {
+    if (code === 'MULTI') return 'Multi-Language';
     return languageNames[code] || code;
 }
 
-// Load translated files on page load
-$(document).ready(function() {
-    loadTranslatedFiles();
-    loadSourceFiles();
+// ─── Language Multi-Select ────────────────────────────────────────────────────
 
-    // Handle form submission
-    $('#translation-form').on('submit', function(e) {
-        e.preventDefault();
+function initLangSelector() {
+    const list = document.getElementById('lang-options-list');
+    if (!list) return;
+    list.innerHTML = '';
+    allLanguages.forEach(function(lang) {
+        const label = document.createElement('label');
+        label.className = 'lang-option-item';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.className = 'lang-checkbox';
+        cb.value = lang.code;
+        cb.addEventListener('change', updateLangDisplay);
+        label.appendChild(cb);
+        label.appendChild(document.createTextNode(' ' + lang.name));
+        list.appendChild(label);
+    });
+}
 
-        const formData = new FormData(this);
-        const fileSource = $('input[name="file_source"]:checked').val();
-        const fileName = fileSource === 'upload' 
-            ? $('#docx-file')[0].files[0]?.name 
-            : $('#existing-file option:selected').text();
+function toggleLangDropdown(e) {
+    e.stopPropagation();
+    const dropdown = document.getElementById('lang-dropdown');
+    const arrow = document.getElementById('lang-arrow');
+    const isOpen = dropdown.classList.contains('open');
+    dropdown.classList.toggle('open', !isOpen);
+    arrow.classList.toggle('open', !isOpen);
+    if (!isOpen) {
+        setTimeout(function() {
+            const input = document.getElementById('lang-search-input');
+            if (input) input.focus();
+        }, 50);
+    }
+}
 
-        // Add file source indicator
-        formData.append('use_existing', fileSource === 'existing');
+function filterLangOptions(query) {
+    const q = query.toLowerCase();
+    document.querySelectorAll('.lang-option-item:not(.lang-select-all-item)').forEach(function(item) {
+        item.style.display = item.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+    syncSelectAll();
+}
 
-        // Validate file
-        if (fileSource === 'upload') {
-            const file = $('#docx-file')[0].files[0];
-            if (!file) {
-                toastr.error('Please select a file to upload');
-                return;
-            }
-
-            // Check file extension
-            const fileExt = file.name.split('.').pop().toLowerCase();
-            if (fileExt !== 'docx') {
-                toastr.error('Only DOCX files are allowed');
-                return;
-            }
-
-            // Check file size (max 50MB)
-            if (file.size > 50 * 1024 * 1024) {
-                toastr.error('File size must be less than 50MB');
-                return;
-            }
-        } else {
-            const existingFile = $('#existing-file').val();
-            if (!existingFile) {
-                toastr.error('Please select an existing file');
-                return;
-            }
+function toggleSelectAllLangs(masterCb) {
+    document.querySelectorAll('.lang-option-item:not(.lang-select-all-item)').forEach(function(item) {
+        if (item.style.display !== 'none') {
+            const cb = item.querySelector('.lang-checkbox');
+            if (cb) cb.checked = masterCb.checked;
         }
+    });
+    updateLangDisplay();
+}
 
-        // Show upload started notification
-        toastr.info('Translation started for: ' + fileName);
+function syncSelectAll() {
+    const allVisible = Array.from(document.querySelectorAll('.lang-option-item:not(.lang-select-all-item)'))
+        .filter(item => item.style.display !== 'none');
+    const allChecked = allVisible.length > 0 && allVisible.every(item => {
+        const cb = item.querySelector('.lang-checkbox');
+        return cb && cb.checked;
+    });
+    const masterCb = document.getElementById('lang-select-all');
+    if (masterCb) masterCb.checked = allChecked;
+}
 
-        // Disable submit button
-        const submitBtn = $(this).find('button[type="submit"]');
-        const originalHtml = submitBtn.html();
-        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+function getSelectedLanguages() {
+    return Array.from(document.querySelectorAll('.lang-checkbox:checked')).map(cb => cb.value);
+}
 
-        // Submit form via AJAX
+function updateLangDisplay() {
+    const selected = getSelectedLanguages();
+    const display = document.getElementById('lang-selected-display');
+    if (!display) return;
+    if (selected.length === 0) {
+        display.innerHTML = '<span class="lang-placeholder">Select language(s)...</span>';
+    } else {
+        const shown = selected.slice(0, 4);
+        let html = shown.map(code => '<span class="lang-tag">' + escapeHtml(getLanguageName(code)) + '</span>').join('');
+        if (selected.length > 4) {
+            html += '<span class="lang-tag lang-tag-more">+' + (selected.length - 4) + ' more</span>';
+        }
+        display.innerHTML = html;
+    }
+    syncSelectAll();
+}
+
+function clearLangSelection() {
+    document.querySelectorAll('.lang-checkbox').forEach(function(cb) { cb.checked = false; });
+    updateLangDisplay();
+}
+
+// ─── Translation Requests ─────────────────────────────────────────────────────
+
+function submitSingleTranslation(formData) {
+    return new Promise(function(resolve, reject) {
         $.ajax({
             url: 'api/translate.php',
             type: 'POST',
@@ -95,42 +165,160 @@ $(document).ready(function() {
             success: function(response) {
                 try {
                     const data = typeof response === 'string' ? JSON.parse(response) : response;
-
-                    if (data.success) {
-                        toastr.success('Translation completed successfully: ' + fileName);
-
-                        // Reset form
-                        $('#translation-form')[0].reset();
-                        $('input[name="file_source"][value="upload"]').prop('checked', true);
-                        toggleFileSource();
-
-                        // Reload files list
-                        setTimeout(function() {
-                            loadTranslatedFiles();
-                            loadSourceFiles();
-                        }, 1000);
-                    } else {
-                        toastr.error(data.message || 'Translation failed');
-                    }
-                } catch (e) {
-                    toastr.error('Error processing response');
+                    if (data.success) resolve(data);
+                    else reject(new Error(data.message || 'Translation failed'));
+                } catch(e) {
+                    reject(new Error('Error processing response'));
                 }
             },
             error: function(xhr, status, error) {
-                toastr.error('Translation failed: ' + error);
-            },
-            complete: function() {
-                // Re-enable submit button
-                submitBtn.prop('disabled', false).html(originalHtml);
+                reject(new Error(error || 'Request failed'));
             }
         });
     });
+}
+
+function submitMultiTranslation(formData) {
+    return new Promise(function(resolve, reject) {
+        $.ajax({
+            url: 'api/translate_multi.php',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                try {
+                    const data = typeof response === 'string' ? JSON.parse(response) : response;
+                    if (data.success) resolve(data);
+                    else reject(new Error(data.message || 'Translation failed'));
+                } catch(e) {
+                    reject(new Error('Error processing response'));
+                }
+            },
+            error: function(xhr, status, error) {
+                reject(new Error(error || 'Request failed'));
+            }
+        });
+    });
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+$(document).ready(function() {
+    initLangSelector();
+    loadTranslatedFiles();
+    loadSourceFiles();
+
+    // Close lang dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        const ms = document.getElementById('lang-multiselect');
+        if (ms && !ms.contains(e.target)) {
+            const dropdown = document.getElementById('lang-dropdown');
+            const arrow = document.getElementById('lang-arrow');
+            if (dropdown) dropdown.classList.remove('open');
+            if (arrow) arrow.classList.remove('open');
+        }
+    });
+
+    // Handle form submission
+    $('#translation-form').on('submit', async function(e) {
+        e.preventDefault();
+
+        const selectedLanguages = getSelectedLanguages();
+        if (selectedLanguages.length === 0) {
+            toastr.error('Please select at least one language');
+            return;
+        }
+
+        const fileSource = $('input[name="file_source"]:checked').val();
+        const fileName = fileSource === 'upload'
+            ? ($('#docx-file')[0].files[0] ? $('#docx-file')[0].files[0].name : '')
+            : $('#existing-file option:selected').text();
+
+        // Validate file
+        if (fileSource === 'upload') {
+            const file = $('#docx-file')[0].files[0];
+            if (!file) { toastr.error('Please select a file to upload'); return; }
+            if (file.name.split('.').pop().toLowerCase() !== 'docx') { toastr.error('Only DOCX files are allowed'); return; }
+            if (file.size > 50 * 1024 * 1024) { toastr.error('File size must be less than 50MB'); return; }
+        } else {
+            if (!$('#existing-file').val()) { toastr.error('Please select an existing file'); return; }
+        }
+
+        const submitBtn = $(this).find('button[type="submit"]');
+        const originalHtml = submitBtn.html();
+        submitBtn.prop('disabled', true);
+
+        const baseFormData = new FormData(this);
+        baseFormData.set('use_existing', fileSource === 'existing' ? 'true' : 'false');
+
+        if (selectedLanguages.length === 1) {
+            // Single language — use existing endpoint
+            const lang = selectedLanguages[0];
+            submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Translating...');
+
+            const fd = new FormData();
+            for (const [key, val] of baseFormData.entries()) {
+                fd.append(key, val);
+            }
+            fd.set('target_language', lang);
+
+            try {
+                await submitSingleTranslation(fd);
+                toastr.success('Translation completed: ' + fileName);
+                $('#translation-form')[0].reset();
+                $('input[name="file_source"][value="existing"]').prop('checked', true);
+                toggleFileSource();
+                clearLangSelection();
+                setTimeout(function() { loadTranslatedFiles(); loadSourceFiles(); }, 1000);
+            } catch(err) {
+                toastr.error(err.message || 'Translation failed');
+            }
+
+        } else {
+            // Multiple languages — send all at once, get one combined document
+            submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Translating ' + selectedLanguages.length + ' languages into one document...');
+
+            const fd = new FormData();
+            for (const [key, val] of baseFormData.entries()) {
+                fd.append(key, val);
+            }
+            selectedLanguages.forEach(function(lang) {
+                fd.append('target_languages[]', lang);
+            });
+
+            try {
+                const result = await submitMultiTranslation(fd);
+                const succeeded = result.data.languages.length;
+                const failed    = result.data.failed_languages.length;
+
+                if (failed === 0) {
+                    toastr.success(succeeded + ' language' + (succeeded !== 1 ? 's' : '') + ' combined into one document: ' + fileName);
+                } else {
+                    toastr.warning(
+                        succeeded + ' of ' + selectedLanguages.length + ' languages translated. ' +
+                        'Failed: ' + result.data.failed_languages.join(', ')
+                    );
+                }
+
+                $('#translation-form')[0].reset();
+                $('input[name="file_source"][value="existing"]').prop('checked', true);
+                toggleFileSource();
+                clearLangSelection();
+                setTimeout(function() { loadTranslatedFiles(); loadSourceFiles(); }, 1000);
+            } catch(err) {
+                toastr.error(err.message || 'Translation failed');
+            }
+        }
+
+        submitBtn.prop('disabled', false).html(originalHtml);
+    });
 });
 
-// Toggle between upload and existing file
+// ─── File Source Toggle ───────────────────────────────────────────────────────
+
 function toggleFileSource() {
     const fileSource = $('input[name="file_source"]:checked').val();
-    
     if (fileSource === 'upload') {
         $('#upload-section').show();
         $('#existing-section').hide();
@@ -144,7 +332,8 @@ function toggleFileSource() {
     }
 }
 
-// Load source files for dropdown
+// ─── Source Files ─────────────────────────────────────────────────────────────
+
 function loadSourceFiles() {
     $.ajax({
         url: 'api/get_source_files.php',
@@ -152,22 +341,17 @@ function loadSourceFiles() {
         success: function(response) {
             try {
                 const data = typeof response === 'string' ? JSON.parse(response) : response;
-
-                if (data.success) {
-                    populateSourceFilesDropdown(data.files);
-                }
-            } catch (e) {
+                if (data.success) populateSourceFilesDropdown(data.files);
+            } catch(e) {
                 console.error('Error loading source files:', e);
             }
         }
     });
 }
 
-// Populate source files dropdown
 function populateSourceFilesDropdown(files) {
     const select = $('#existing-file');
-    select.empty();
-    select.append('<option value="">Select a file...</option>');
+    select.empty().append('<option value="">Select a file...</option>');
 
     if (!files || Object.keys(files).length === 0) {
         select.append('<option value="" disabled>No source files available</option>');
@@ -176,7 +360,6 @@ function populateSourceFilesDropdown(files) {
 
     for (const project in files) {
         const projectGroup = $('<optgroup label="' + escapeHtml(project) + '">');
-
         for (const topic in files[project]) {
             files[project][topic].forEach(function(file) {
                 projectGroup.append(
@@ -186,26 +369,20 @@ function populateSourceFilesDropdown(files) {
                 );
             });
         }
-
         select.append(projectGroup);
     }
 
-    // Add change handler to prefill project and topic
     select.off('change').on('change', function() {
-        const selectedOption = $(this).find('option:selected');
-        const project = selectedOption.data('project');
-        const topic = selectedOption.data('topic');
-
-        if (project) {
-            $('#project-name').val(project);
-        }
-        if (topic) {
-            $('#topic-name').val(topic);
-        }
+        const selected = $(this).find('option:selected');
+        const project = selected.data('project');
+        const topic = selected.data('topic');
+        if (project) $('#project-name').val(project);
+        if (topic) $('#topic-name').val(topic);
     });
 }
 
-// Load translated files
+// ─── Translated Files ─────────────────────────────────────────────────────────
+
 function loadTranslatedFiles() {
     $.ajax({
         url: 'api/get_files.php',
@@ -213,7 +390,6 @@ function loadTranslatedFiles() {
         success: function(response) {
             try {
                 const data = typeof response === 'string' ? JSON.parse(response) : response;
-
                 if (data.success) {
                     cachedFilesData = data.files;
                     populateProjectDropdown();
@@ -221,7 +397,7 @@ function loadTranslatedFiles() {
                 } else {
                     $('#files-container').html('<p class="loading">' + (data.message || 'No files found') + '</p>');
                 }
-            } catch (e) {
+            } catch(e) {
                 $('#files-container').html('<p class="loading">Error loading files</p>');
             }
         },
@@ -231,7 +407,6 @@ function loadTranslatedFiles() {
     });
 }
 
-// Populate project dropdown from cached data
 function populateProjectDropdown() {
     const select = $('#filter-project');
     const current = select.val();
@@ -245,7 +420,6 @@ function populateProjectDropdown() {
     populateTopicDropdown();
 }
 
-// Populate topic dropdown based on selected project
 function populateTopicDropdown() {
     const select = $('#filter-topic');
     const current = select.val();
@@ -264,19 +438,17 @@ function populateTopicDropdown() {
     select.val(current);
 }
 
-// When project filter changes, update topic dropdown then filter
 function onProjectFilterChange() {
     populateTopicDropdown();
     applyFilters();
 }
 
-// Apply project/topic/file filters to cached data
 function applyFilters() {
     if (!cachedFilesData) return;
 
     const projectFilter = $('#filter-project').val() || '';
-    const topicFilter = $('#filter-topic').val() || '';
-    const fileFilter = ($('#filter-file').val() || '').toLowerCase().trim();
+    const topicFilter   = $('#filter-topic').val() || '';
+    const fileFilter    = ($('#filter-file').val() || '').toLowerCase().trim();
 
     if (!projectFilter && !topicFilter && !fileFilter) {
         displayFiles(cachedFilesData);
@@ -286,29 +458,29 @@ function applyFilters() {
     const filtered = {};
     for (const project in cachedFilesData) {
         if (projectFilter && project !== projectFilter) continue;
-
         const filteredTopics = {};
         for (const topic in cachedFilesData[project]) {
             if (topicFilter && topic !== topicFilter) continue;
-
             const filteredFiles = cachedFilesData[project][topic].filter(function(file) {
                 return !fileFilter || file.name.toLowerCase().includes(fileFilter);
             });
-
-            if (filteredFiles.length > 0) {
-                filteredTopics[topic] = filteredFiles;
-            }
+            if (filteredFiles.length > 0) filteredTopics[topic] = filteredFiles;
         }
-
-        if (Object.keys(filteredTopics).length > 0) {
-            filtered[project] = filteredTopics;
-        }
+        if (Object.keys(filteredTopics).length > 0) filtered[project] = filteredTopics;
     }
 
     displayFiles(filtered);
 }
 
-// Display files grouped by project and topic
+// ─── Display Files ────────────────────────────────────────────────────────────
+
+// Extract the original doc name by stripping _LANGCODE_TIMESTAMP or _MULTI_TIMESTAMP from the end
+function getBaseFileName(filename) {
+    return filename
+        .replace(/\.docx$/i, '')
+        .replace(/_([A-Z]{2}(-[A-Z]{2})?|MULTI)_\d+$/, '');
+}
+
 function displayFiles(files) {
     if (!files || Object.keys(files).length === 0) {
         $('#files-container').html('<p class="loading">No translated files yet</p>');
@@ -317,7 +489,6 @@ function displayFiles(files) {
 
     let html = '';
 
-    // Group files by project
     for (const project in files) {
         html += '<div class="project-group">';
         html += '<div class="project-title">';
@@ -325,43 +496,95 @@ function displayFiles(files) {
         html += '<button style="margin-left:8px;background:#95a5a6;color:white;border:none;border-radius:3px;padding:2px 8px;font-size:11px;cursor:pointer;" onmouseover="this.style.background=\'#e74c3c\'" onmouseout="this.style.background=\'#95a5a6\'" onclick="hideItem(\'project\', \'' + escapeHtml(project) + '\')" title="Hide project"><i class="fas fa-eye-slash"></i></button>';
         html += '</div>';
 
-        // Group by topic within project
         for (const topic in files[project]) {
+            const topicFiles = files[project][topic];
+
             html += '<div class="topic-group">';
             html += '<div class="topic-title">';
             html += '<span>' + escapeHtml(topic) + '</span>';
             html += '<button style="margin-left:8px;background:#95a5a6;color:white;border:none;border-radius:3px;padding:2px 8px;font-size:11px;cursor:pointer;" onmouseover="this.style.background=\'#e74c3c\'" onmouseout="this.style.background=\'#95a5a6\'" onclick="hideItem(\'topic\', \'' + escapeHtml(topic) + '\')" title="Hide topic"><i class="fas fa-eye-slash"></i></button>';
             html += '</div>';
 
-            // Display files
-            files[project][topic].forEach(function(file) {
-                html += '<div class="file-item">';
-                html += '<input type="checkbox" class="file-checkbox" data-path="' + escapeHtml(file.path) + '">';
-                html += '<div class="file-info">';
-                html += '<div class="file-name">' + escapeHtml(file.name) + '</div>';
-                html += '<div class="file-meta">' + getLanguageName(file.language) + ' | ' + escapeHtml(file.date) + '</div>';
-                html += '</div>';
-                html += '<div class="file-actions">';
-                html += '<button class="icon-btn btn-download-file" onclick="downloadFile(\'' + escapeHtml(file.path) + '\')" title="Download">';
-                html += '<i class="fas fa-download"></i>';
-                html += '</button>';
-                html += '<button class="icon-btn btn-delete-file" onclick="deleteSingleFile(\'' + escapeHtml(file.path) + '\')" title="Delete">';
-                html += '<i class="fas fa-trash"></i>';
-                html += '</button>';
-                html += '</div>';
-                html += '</div>';
+            // Group files by source document (base name without lang+timestamp)
+            const docGroups = {};
+            topicFiles.forEach(function(file) {
+                const base = getBaseFileName(file.name);
+                if (!docGroups[base]) docGroups[base] = [];
+                docGroups[base].push(file);
             });
 
-            html += '</div>';
+            for (const baseName in docGroups) {
+                const docFiles = docGroups[baseName];
+
+                // Count files per language within this doc
+                const langCounts = {};
+                docFiles.forEach(function(f) {
+                    langCounts[f.language] = (langCounts[f.language] || 0) + 1;
+                });
+                const langs = Object.keys(langCounts).sort();
+                const langCount = langs.length;
+
+                html += '<div class="doc-group">';
+                html += '<div class="doc-group-header">';
+                html += '<i class="fas fa-file-word doc-icon"></i>';
+                html += '<span class="doc-group-name">' + escapeHtml(baseName) + '</span>';
+                html += '<span class="doc-lang-badge">' + langCount + ' language' + (langCount !== 1 ? 's' : '') + '</span>';
+                html += '</div>';
+
+                // Language tabs — only when 2+ languages for this doc
+                if (langCount > 1) {
+                    html += '<div class="lang-tabs-bar">';
+                    html += '<button class="lang-tab active" onclick="switchLangTab(this, \'all\')">All (' + docFiles.length + ')</button>';
+                    langs.forEach(function(lang) {
+                        html += '<button class="lang-tab" onclick="switchLangTab(this, \'' + escapeHtml(lang) + '\')">' + escapeHtml(getLanguageName(lang)) + ' (' + langCounts[lang] + ')</button>';
+                    });
+                    html += '</div>';
+                }
+
+                // File items
+                docFiles.forEach(function(file) {
+                    html += '<div class="file-item" data-lang="' + escapeHtml(file.language) + '">';
+                    html += '<input type="checkbox" class="file-checkbox" data-path="' + escapeHtml(file.path) + '">';
+                    html += '<div class="file-info">';
+                    html += '<div class="file-name">' + escapeHtml(getLanguageName(file.language)) + '</div>';
+                    html += '<div class="file-meta">' + escapeHtml(file.date) + '</div>';
+                    html += '</div>';
+                    html += '<div class="file-actions">';
+                    html += '<button class="icon-btn btn-download-file" onclick="downloadFile(\'' + escapeHtml(file.path) + '\')" title="Download"><i class="fas fa-download"></i></button>';
+                    html += '<button class="icon-btn btn-delete-file" onclick="deleteSingleFile(\'' + escapeHtml(file.path) + '\')" title="Delete"><i class="fas fa-trash"></i></button>';
+                    html += '</div>';
+                    html += '</div>';
+                });
+
+                html += '</div>'; // doc-group
+            }
+
+            html += '</div>'; // topic-group
         }
 
-        html += '</div>';
+        html += '</div>'; // project-group
     }
 
     $('#files-container').html(html);
 }
 
-// Hide a project or topic
+// Switch visible language tab within a doc group
+function switchLangTab(btn, lang) {
+    const tabsBar = $(btn).closest('.lang-tabs-bar');
+    tabsBar.find('.lang-tab').removeClass('active');
+    $(btn).addClass('active');
+
+    const docGroup = tabsBar.closest('.doc-group');
+    if (lang === 'all') {
+        docGroup.find('.file-item').show();
+    } else {
+        docGroup.find('.file-item').hide();
+        docGroup.find('.file-item[data-lang="' + lang + '"]').show();
+    }
+}
+
+// ─── Hide / Unhide ────────────────────────────────────────────────────────────
+
 function hideItem(type, name) {
     if (!confirm('Hide ' + type + ' "' + name + '"? You can unhide it from the manage hidden panel.')) return;
 
@@ -387,7 +610,6 @@ function hideItem(type, name) {
     });
 }
 
-// Unhide a project or topic
 function unhideItem(type, name) {
     $.ajax({
         url: 'api/toggle_hidden.php',
@@ -412,7 +634,6 @@ function unhideItem(type, name) {
     });
 }
 
-// Open manage hidden items modal
 function openManageHidden() {
     $('#manage-hidden-modal').fadeIn(300);
     loadHiddenModal();
@@ -438,7 +659,6 @@ function loadHiddenModal() {
 function renderHiddenModal(hidden) {
     const projects = hidden.projects || [];
     const topics   = hidden.topics   || [];
-
     let html = '';
 
     if (projects.length === 0 && topics.length === 0) {
@@ -447,19 +667,15 @@ function renderHiddenModal(hidden) {
         if (projects.length > 0) {
             html += '<div class="hidden-section-title">Hidden Projects</div>';
             projects.forEach(function(p) {
-                html += '<div class="hidden-item">';
-                html += '<span>' + escapeHtml(p) + '</span>';
-                html += '<button class="icon-btn btn-unhide" onclick="unhideItem(\'project\', \'' + escapeHtml(p) + '\')" title="Unhide"><i class="fas fa-eye"></i></button>';
-                html += '</div>';
+                html += '<div class="hidden-item"><span>' + escapeHtml(p) + '</span>';
+                html += '<button class="icon-btn btn-unhide" onclick="unhideItem(\'project\', \'' + escapeHtml(p) + '\')" title="Unhide"><i class="fas fa-eye"></i></button></div>';
             });
         }
         if (topics.length > 0) {
             html += '<div class="hidden-section-title">Hidden Topics</div>';
             topics.forEach(function(t) {
-                html += '<div class="hidden-item">';
-                html += '<span>' + escapeHtml(t) + '</span>';
-                html += '<button class="icon-btn btn-unhide" onclick="unhideItem(\'topic\', \'' + escapeHtml(t) + '\')" title="Unhide"><i class="fas fa-eye"></i></button>';
-                html += '</div>';
+                html += '<div class="hidden-item"><span>' + escapeHtml(t) + '</span>';
+                html += '<button class="icon-btn btn-unhide" onclick="unhideItem(\'topic\', \'' + escapeHtml(t) + '\')" title="Unhide"><i class="fas fa-eye"></i></button></div>';
             });
         }
     }
@@ -467,16 +683,14 @@ function renderHiddenModal(hidden) {
     $('#hidden-items-list').html(html);
 }
 
-// Download single file
+// ─── Download / Delete ────────────────────────────────────────────────────────
+
 function downloadFile(path) {
     window.open('api/download.php?file=' + encodeURIComponent(path), '_blank');
 }
 
-// Delete single file
 function deleteSingleFile(path) {
-    if (!confirm('Are you sure you want to delete this file? This action cannot be undone.')) {
-        return;
-    }
+    if (!confirm('Are you sure you want to delete this file? This action cannot be undone.')) return;
 
     $.ajax({
         url: 'api/bulk_delete.php',
@@ -486,49 +700,36 @@ function deleteSingleFile(path) {
         success: function(response) {
             try {
                 const data = typeof response === 'string' ? JSON.parse(response) : response;
-
                 if (data.success) {
                     toastr.success('File deleted successfully');
                     loadTranslatedFiles();
                 } else {
                     toastr.error(data.message || 'Failed to delete file');
                 }
-            } catch (e) {
+            } catch(e) {
                 toastr.error('Error processing response');
             }
         },
-        error: function() {
-            toastr.error('Failed to delete file');
-        }
+        error: function() { toastr.error('Failed to delete file'); }
     });
 }
 
-// Bulk download selected files
 function bulkDownload() {
     const selected = getSelectedFiles();
-
-    if (selected.length === 0) {
-        toastr.warning('Please select files to download');
-        return;
-    }
+    if (selected.length === 0) { toastr.warning('Please select files to download'); return; }
 
     toastr.info('Preparing download for ' + selected.length + ' file(s)...');
 
     if (selected.length === 1) {
-        // Single file download
         window.open('api/download.php?file=' + encodeURIComponent(selected[0]), '_blank');
     } else {
-        // Bulk download as ZIP
         $.ajax({
             url: 'api/bulk_download.php',
             type: 'POST',
             data: JSON.stringify({ files: selected }),
             contentType: 'application/json',
-            xhrFields: {
-                responseType: 'blob'
-            },
-            success: function(blob, status, xhr) {
-                // Create download link
+            xhrFields: { responseType: 'blob' },
+            success: function(blob) {
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -537,28 +738,17 @@ function bulkDownload() {
                 a.click();
                 window.URL.revokeObjectURL(url);
                 document.body.removeChild(a);
-
                 toastr.success('Download started successfully');
             },
-            error: function() {
-                toastr.error('Failed to download files');
-            }
+            error: function() { toastr.error('Failed to download files'); }
         });
     }
 }
 
-// Bulk delete selected files
 function bulkDelete() {
     const selected = getSelectedFiles();
-
-    if (selected.length === 0) {
-        toastr.warning('Please select files to delete');
-        return;
-    }
-
-    if (!confirm('Are you sure you want to delete ' + selected.length + ' file(s)? This action cannot be undone.')) {
-        return;
-    }
+    if (selected.length === 0) { toastr.warning('Please select files to delete'); return; }
+    if (!confirm('Are you sure you want to delete ' + selected.length + ' file(s)? This action cannot be undone.')) return;
 
     $.ajax({
         url: 'api/bulk_delete.php',
@@ -568,24 +758,22 @@ function bulkDelete() {
         success: function(response) {
             try {
                 const data = typeof response === 'string' ? JSON.parse(response) : response;
-
                 if (data.success) {
                     toastr.success(data.message || 'Files deleted successfully');
                     loadTranslatedFiles();
                 } else {
                     toastr.error(data.message || 'Failed to delete files');
                 }
-            } catch (e) {
+            } catch(e) {
                 toastr.error('Error processing response');
             }
         },
-        error: function() {
-            toastr.error('Failed to delete files');
-        }
+        error: function() { toastr.error('Failed to delete files'); }
     });
 }
 
-// Toggle log viewer
+// ─── Logs ─────────────────────────────────────────────────────────────────────
+
 function toggleLogViewer() {
     const logViewer = $('#log-viewer');
     if (logViewer.is(':visible')) {
@@ -596,25 +784,19 @@ function toggleLogViewer() {
     }
 }
 
-// Refresh logs
 function refreshLogs() {
     const lines = $('#log-lines').val() || 100;
-    
     $('#log-content').html('<p class="loading">Loading logs...</p>');
-    
+
     $.ajax({
         url: 'api/get_logs.php?lines=' + lines,
         type: 'GET',
         success: function(response) {
             try {
                 const data = typeof response === 'string' ? JSON.parse(response) : response;
-
-                if (data.success) {
-                    displayLogs(data.logs, data.total_lines);
-                } else {
-                    $('#log-content').html('<p class="error">Error: ' + escapeHtml(data.message) + '</p>');
-                }
-            } catch (e) {
+                if (data.success) displayLogs(data.logs, data.total_lines);
+                else $('#log-content').html('<p class="error">Error: ' + escapeHtml(data.message) + '</p>');
+            } catch(e) {
                 $('#log-content').html('<p class="error">Error parsing logs</p>');
             }
         },
@@ -624,7 +806,6 @@ function refreshLogs() {
     });
 }
 
-// Display logs
 function displayLogs(logs, totalLines) {
     if (!logs || logs.length === 0) {
         $('#log-content').html('<p class="empty">No logs available</p>');
@@ -633,37 +814,25 @@ function displayLogs(logs, totalLines) {
 
     let html = '<div class="log-info">Showing ' + logs.length + ' of ' + totalLines + ' total lines</div>';
     html += '<div class="log-entries">';
-
     logs.forEach(function(log) {
-        const logClass = log.includes('SUCCESS') ? 'log-success' : 
-                        log.includes('FAILED') ? 'log-error' : 
-                        log.includes('DELETED') ? 'log-warning' : '';
-        
+        const logClass = log.includes('SUCCESS') ? 'log-success' :
+                         log.includes('FAILED')  ? 'log-error' :
+                         log.includes('DELETED') ? 'log-warning' : '';
         html += '<div class="log-entry ' + logClass + '">' + escapeHtml(log) + '</div>';
     });
-
     html += '</div>';
-
     $('#log-content').html(html);
 }
 
-// Get selected file paths
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
 function getSelectedFiles() {
     const selected = [];
-    $('.file-checkbox:checked').each(function() {
-        selected.push($(this).data('path'));
-    });
+    $('.file-checkbox:checked').each(function() { selected.push($(this).data('path')); });
     return selected;
 }
 
-// Escape HTML to prevent XSS
 function escapeHtml(text) {
-    const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-    };
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
     return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
 }

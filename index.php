@@ -134,46 +134,26 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="target-language">Target Language *</label>
-                    <select id="target-language" name="target_language" required>
-                        <option value="">Select Language</option>
-                        <option value="AR">العربية (Arabic)</option>
-                        <option value="HY">Հայերեն (Armenian)</option>
-                        <option value="BS">Bosanski (Bosnian)</option>
-                        <option value="BG">Български (Bulgarian)</option>
-                        <option value="CA">Català (Catalan)</option>
-                        <option value="ZH">中文 (中国) (Chinese Simplified)</option>
-                        <option value="HR">Hrvatski (Croatian)</option>
-                        <option value="CS">Čeština (Czech)</option>
-                        <option value="DA">Dansk (Danish)</option>
-                        <option value="NL">Nederlands (Dutch)</option>
-                        <option value="ET">Eesti (Estonian)</option>
-                        <option value="FI">Suomi (Finnish)</option>
-                        <option value="FR">Français (French)</option>
-                        <option value="DE">Deutsch (German)</option>
-                        <option value="EL">Ελληνικά (Greek)</option>
-                        <option value="HE">עברית (Hebrew)</option>
-                        <option value="HU">Magyar (Hungarian)</option>
-                        <option value="IS">Íslenska (Icelandic)</option>
-                        <option value="IT">Italiano (Italian)</option>
-                        <option value="KA">ქართული (Georgian)</option>
-                        <option value="LV">Latviešu (Latvian)</option>
-                        <option value="LT">Lietuvių (Lithuanian)</option>
-                        <option value="MK">Македонски (Macedonian)</option>
-                        <option value="NB">Norsk (Norwegian Bokmål)</option>
-                        <option value="PL">Polski (Polish)</option>
-                        <option value="PT-PT">Português (Portugal)</option>
-                        <option value="PT-BR">Português (Brazil)</option>
-                        <option value="RO">Română (Romanian)</option>
-                        <option value="RU">Русский (Russian)</option>
-                        <option value="SR">Српски (Serbian)</option>
-                        <option value="SK">Slovenčina (Slovak)</option>
-                        <option value="SL">Slovenščina (Slovenian)</option>
-                        <option value="ES">Español (Spanish)</option>
-                        <option value="SV">Svenska (Swedish)</option>
-                        <option value="TR">Türkçe (Turkish)</option>
-                        <option value="UK">Українська (Ukrainian)</option>
-                    </select>
+                    <label>Target Language(s) *</label>
+                    <div class="lang-multiselect" id="lang-multiselect">
+                        <div class="lang-multiselect-trigger" id="lang-trigger" onclick="toggleLangDropdown(event)">
+                            <div id="lang-selected-display"><span class="lang-placeholder">Select language(s)...</span></div>
+                            <i class="fas fa-chevron-down" id="lang-arrow"></i>
+                        </div>
+                        <div class="lang-dropdown" id="lang-dropdown">
+                            <div class="lang-search-wrap">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="lang-search-input" placeholder="Search languages..." oninput="filterLangOptions(this.value)" onclick="event.stopPropagation()">
+                            </div>
+                            <div class="lang-select-all-row">
+                                <label class="lang-option-item lang-select-all-item">
+                                    <input type="checkbox" id="lang-select-all" onchange="toggleSelectAllLangs(this)"> Select All
+                                </label>
+                            </div>
+                            <div class="lang-options-list" id="lang-options-list"></div>
+                        </div>
+                    </div>
+                    <small>Select one or more languages to translate into</small>
                 </div>
 
                 <div class="form-group">

@@ -69,9 +69,9 @@ try {
                     continue;
                 }
 
-                // Extract language from filename (format: name_LANG_timestamp.docx)
+                // Extract language from filename (format: name_LANG_timestamp.docx or name_MULTI_timestamp.docx)
                 $language = 'Unknown';
-                if (preg_match('/_([A-Z]{2}(?:-[A-Z]{2})?)_\d+\.docx$/', $file, $matches)) {
+                if (preg_match('/_([A-Z]{2}(?:-[A-Z]{2})?|MULTI)_\d+\.docx$/', $file, $matches)) {
                     $language = $matches[1];
                 }
 

@@ -574,6 +574,213 @@ class DocumentTranslator {
         return isset($languageMap[$upperCode]) ? $languageMap[$upperCode] : $upperCode;
     }
 
+    public function mergeTranslatedDocuments($translatedPaths, $languages, $outputPath) {
+        try {
+            if (empty($translatedPaths)) return false;
+
+            if (!copy($translatedPaths[0], $outputPath)) return false;
+
+            $zip = new ZipArchive();
+            if ($zip->open($outputPath) !== true) return false;
+
+            $baseDocXml  = $zip->getFromName('word/document.xml');
+            $baseRelsXml = $zip->getFromName('word/_rels/document.xml.rels');
+            $zip->close();
+
+            if ($baseDocXml === false) return false;
+
+            $nsUri = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+            $rNsUri = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+
+            $baseDom = new DOMDocument();
+            $baseDom->loadXML($baseDocXml);
+            $baseXpath = new DOMXPath($baseDom);
+            $baseXpath->registerNamespace('w', $nsUri);
+
+            $baseBody = $baseXpath->query('//w:body')->item(0);
+            if (!$baseBody) return false;
+
+            // sectPr must stay as the last child of w:body
+            $sectPr = $baseXpath->query('w:sectPr', $baseBody)->item(0);
+
+            // Prepend language heading for the first section
+            $firstChild = $baseBody->firstChild;
+            $headingNode = $this->createLanguageHeadingNode($baseDom, $languages[0]);
+            $baseBody->insertBefore($headingNode, $firstChild);
+
+            // Set up relationships DOM
+            $relsDom = new DOMDocument();
+            if ($baseRelsXml) {
+                $relsDom->loadXML($baseRelsXml);
+            } else {
+                $relsDom->loadXML('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>');
+            }
+            $relsRoot     = $relsDom->documentElement;
+            $relIdCounter = 5000;
+
+            // Append each additional language section
+            for ($i = 1; $i < count($translatedPaths); $i++) {
+                $otherZip = new ZipArchive();
+                if ($otherZip->open($translatedPaths[$i]) !== true) continue;
+
+                $otherDocXml  = $otherZip->getFromName('word/document.xml');
+                $otherRelsXml = $otherZip->getFromName('word/_rels/document.xml.rels');
+                $otherZip->close();
+
+                if ($otherDocXml === false) continue;
+
+                $otherDom = new DOMDocument();
+                $otherDom->loadXML($otherDocXml);
+                $otherXpath = new DOMXPath($otherDom);
+                $otherXpath->registerNamespace('w', $nsUri);
+
+                // Remap hyperlink relationship IDs to avoid collisions
+                $relIdMapping = [];
+                if ($otherRelsXml) {
+                    $otherRelsDom = new DOMDocument();
+                    $otherRelsDom->loadXML($otherRelsXml);
+                    $otherRelsXpath = new DOMXPath($otherRelsDom);
+                    $hyperlinks = $otherRelsXpath->query('//*[@Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink"]');
+                    foreach ($hyperlinks as $rel) {
+                        $oldId = $rel->getAttribute('Id');
+                        $newId = 'rId' . $relIdCounter++;
+                        $relIdMapping[$oldId] = $newId;
+
+                        $newRel = $relsDom->createElement('Relationship');
+                        $newRel->setAttribute('Id', $newId);
+                        $newRel->setAttribute('Type', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink');
+                        $newRel->setAttribute('Target', $rel->getAttribute('Target'));
+                        $newRel->setAttribute('TargetMode', 'External');
+                        $relsRoot->appendChild($newRel);
+                    }
+                }
+
+                // Page break paragraph
+                $pageBreak = $this->createPageBreakNode($baseDom);
+                if ($sectPr) {
+                    $baseBody->insertBefore($pageBreak, $sectPr);
+                } else {
+                    $baseBody->appendChild($pageBreak);
+                }
+
+                // Language heading
+                $heading = $this->createLanguageHeadingNode($baseDom, $languages[$i]);
+                if ($sectPr) {
+                    $baseBody->insertBefore($heading, $sectPr);
+                } else {
+                    $baseBody->appendChild($heading);
+                }
+
+                // Import body children (skip sectPr)
+                $otherBody = $otherXpath->query('//w:body')->item(0);
+                if (!$otherBody) continue;
+
+                foreach ($otherBody->childNodes as $child) {
+                    if ($child->nodeName === 'w:sectPr') continue;
+                    $imported = $baseDom->importNode($child, true);
+                    $this->remapHyperlinkIds($imported, $relIdMapping, $rNsUri);
+                    if ($sectPr) {
+                        $baseBody->insertBefore($imported, $sectPr);
+                    } else {
+                        $baseBody->appendChild($imported);
+                    }
+                }
+            }
+
+            // Write combined XML back into the output zip
+            $zip2 = new ZipArchive();
+            if ($zip2->open($outputPath) !== true) return false;
+
+            $zip2->deleteName('word/document.xml');
+            $zip2->addFromString('word/document.xml', $baseDom->saveXML());
+            $zip2->deleteName('word/_rels/document.xml.rels');
+            $zip2->addFromString('word/_rels/document.xml.rels', $relsDom->saveXML());
+            $zip2->close();
+
+            return true;
+
+        } catch (Exception $e) {
+            error_log('Merge error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    private function createLanguageHeadingNode($dom, $languageCode) {
+        $nsUri = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+        $langNames = [
+            'AR' => 'Arabic',        'HY' => 'Armenian',     'BS' => 'Bosnian',
+            'BG' => 'Bulgarian',     'CA' => 'Catalan',       'ZH' => 'Chinese (Simplified)',
+            'HR' => 'Croatian',      'CS' => 'Czech',         'DA' => 'Danish',
+            'NL' => 'Dutch',         'EN-US' => 'English (US)', 'EN-GB' => 'English (UK)',
+            'ET' => 'Estonian',      'FI' => 'Finnish',       'FR' => 'French',
+            'KA' => 'Georgian',      'DE' => 'German',        'EL' => 'Greek',
+            'HE' => 'Hebrew',        'HU' => 'Hungarian',     'IS' => 'Icelandic',
+            'IT' => 'Italian',       'LV' => 'Latvian',       'LT' => 'Lithuanian',
+            'MK' => 'Macedonian',    'NB' => 'Norwegian',     'PL' => 'Polish',
+            'PT-PT' => 'Portuguese (Portugal)', 'PT-BR' => 'Portuguese (Brazil)',
+            'RO' => 'Romanian',      'RU' => 'Russian',       'SR' => 'Serbian',
+            'SK' => 'Slovak',        'SL' => 'Slovenian',     'ES' => 'Spanish',
+            'SV' => 'Swedish',       'TR' => 'Turkish',       'UK' => 'Ukrainian',
+        ];
+        $langName = isset($langNames[$languageCode]) ? $langNames[$languageCode] : $languageCode;
+
+        $para = $dom->createElementNS($nsUri, 'w:p');
+
+        $pPr    = $dom->createElementNS($nsUri, 'w:pPr');
+        $pStyle = $dom->createElementNS($nsUri, 'w:pStyle');
+        $pStyle->setAttribute('w:val', 'Heading1');
+        $pPr->appendChild($pStyle);
+        $para->appendChild($pPr);
+
+        $run  = $dom->createElementNS($nsUri, 'w:r');
+        $rPr  = $dom->createElementNS($nsUri, 'w:rPr');
+        $bold = $dom->createElementNS($nsUri, 'w:b');
+        $color = $dom->createElementNS($nsUri, 'w:color');
+        $color->setAttribute('w:val', '2E74B5');
+        $sz = $dom->createElementNS($nsUri, 'w:sz');
+        $sz->setAttribute('w:val', '40');
+        $rPr->appendChild($bold);
+        $rPr->appendChild($color);
+        $rPr->appendChild($sz);
+        $run->appendChild($rPr);
+
+        $text = $dom->createElementNS($nsUri, 'w:t');
+        $text->nodeValue = $langName;
+        $text->setAttribute('xml:space', 'preserve');
+        $run->appendChild($text);
+        $para->appendChild($run);
+
+        return $para;
+    }
+
+    private function createPageBreakNode($dom) {
+        $nsUri = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+
+        $para = $dom->createElementNS($nsUri, 'w:p');
+        $run  = $dom->createElementNS($nsUri, 'w:r');
+        $br   = $dom->createElementNS($nsUri, 'w:br');
+        $br->setAttribute('w:type', 'page');
+        $run->appendChild($br);
+        $para->appendChild($run);
+
+        return $para;
+    }
+
+    private function remapHyperlinkIds($node, $idMapping, $rNsUri) {
+        if (empty($idMapping) || $node->nodeType !== XML_ELEMENT_NODE) return;
+
+        if ($node->hasAttributeNS($rNsUri, 'id')) {
+            $oldId = $node->getAttributeNS($rNsUri, 'id');
+            if (isset($idMapping[$oldId])) {
+                $node->setAttributeNS($rNsUri, 'r:id', $idMapping[$oldId]);
+            }
+        }
+
+        foreach ($node->childNodes as $child) {
+            $this->remapHyperlinkIds($child, $idMapping, $rNsUri);
+        }
+    }
+
     public function isConfigured() {
         return !empty($this->deeplApiKey);
     }
