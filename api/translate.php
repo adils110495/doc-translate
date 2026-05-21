@@ -58,7 +58,7 @@ try {
         'AR', 'HY', 'BS', 'BG', 'CA', 'ZH', 'HR', 'CS', 'DA', 'NL',
         'ET', 'FI', 'FR', 'DE', 'EL', 'HE', 'HU', 'IS', 'IT', 'KA',
         'LV', 'LT', 'MK', 'NB', 'PL', 'PT-PT', 'PT-BR', 'RO', 'RU',
-        'SR', 'SK', 'SL', 'ES', 'SV', 'TR', 'UK', 'EN-US', 'EN-GB'
+        'SR', 'SQ', 'SL', 'ES', 'SV', 'TR', 'UK', 'EN-US', 'EN-GB'
     ];
     if (!in_array($targetLanguage, $validLanguages)) {
         throw new Exception('Invalid target language');

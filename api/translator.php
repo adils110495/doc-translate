@@ -557,7 +557,6 @@ class DocumentTranslator {
             'PT-BR'  => 'PT-BR',
             'RO'     => 'RO',
             'RU'     => 'RU',
-            'SK'     => 'SK',
             'SL'     => 'SL',
             'SV'     => 'SV',
             'TR'     => 'TR',
@@ -573,6 +572,7 @@ class DocumentTranslator {
             'KA'     => 'KA',
             'MK'     => 'MK',
             'SR'     => 'SR',
+            'SQ'     => 'SQ',
         ];
 
         $upperCode = strtoupper($languageCode);
