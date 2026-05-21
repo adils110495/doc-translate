@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/logger.php';
 
 /**
  * Document Translator
@@ -498,6 +500,7 @@ class DocumentTranslator {
 
         if ($response === false) {
             error_log('DeepL API cURL error: ' . $curlError);
+            logApiFailure('DeepL API request failed', null, $curlError);
             return false;
         }
 
@@ -506,6 +509,7 @@ class DocumentTranslator {
         if ($httpCode !== 200) {
             $errorMessage = isset($result['message']) ? $result['message'] : 'Unknown error';
             error_log('DeepL API error (HTTP ' . $httpCode . '): ' . $errorMessage);
+            logApiFailure('DeepL API error: ' . $errorMessage, $httpCode);
             return false;
         }
 
@@ -516,6 +520,7 @@ class DocumentTranslator {
             }
         } else {
             error_log('DeepL API unexpected response format');
+            logApiFailure('DeepL API unexpected response format', $httpCode);
             return false;
         }
 
@@ -719,7 +724,7 @@ class DocumentTranslator {
             'MK' => 'Macedonian',    'NB' => 'Norwegian',     'PL' => 'Polish',
             'PT-PT' => 'Portuguese (Portugal)', 'PT-BR' => 'Portuguese (Brazil)',
             'RO' => 'Romanian',      'RU' => 'Russian',       'SR' => 'Serbian',
-            'SK' => 'Slovak',        'SL' => 'Slovenian',     'ES' => 'Spanish',
+            'SQ' => 'Albanian',      'SL' => 'Slovenian',     'ES' => 'Spanish',
             'SV' => 'Swedish',       'TR' => 'Turkish',       'UK' => 'Ukrainian',
         ];
         $langName = isset($langNames[$languageCode]) ? $langNames[$languageCode] : $languageCode;

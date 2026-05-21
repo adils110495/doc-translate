@@ -44,7 +44,7 @@ const languageNames = {
     'RO':    'Romanian',
     'RU':    'Russian',
     'SR':    'Serbian',
-    'SK':    'Slovak',
+    'SQ':    'Albanian',
     'SL':    'Slovenian',
     'ES':    'Spanish',
     'SV':    'Swedish',

@@ -33,3 +33,21 @@ function logTranslation($fileName, $projectName, $topicName, $targetLanguage, $s
     // Append to log file
     file_put_contents(LOG_FILE, $logEntry, FILE_APPEND | LOCK_EX);
 }
+
+function logApiFailure($message, $httpCode = null, $curlError = null) {
+    $timestamp = date('Y-m-d H:i:s');
+
+    $logEntry = sprintf("[%s] API_FAILURE | %s", $timestamp, $message);
+
+    if ($httpCode !== null) {
+        $logEntry .= ' | HTTP ' . $httpCode;
+    }
+
+    if (!empty($curlError)) {
+        $logEntry .= ' | cURL: ' . $curlError;
+    }
+
+    $logEntry .= PHP_EOL;
+
+    file_put_contents(LOG_FILE, $logEntry, FILE_APPEND | LOCK_EX);
+}
