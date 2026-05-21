@@ -516,7 +516,7 @@ class DocumentTranslator {
         $translations = [];
         if (isset($result['translations']) && is_array($result['translations'])) {
             foreach ($result['translations'] as $translation) {
-                $translations[] = $translation['text'];
+                $translations[] = $this->fixEuroSymbolPosition($translation['text']);
             }
         } else {
             error_log('DeepL API unexpected response format');
@@ -525,6 +525,23 @@ class DocumentTranslator {
         }
 
         return $translations;
+    }
+
+    private function fixEuroSymbolPosition($text) {
+        // All Euro word variants (longest first to avoid partial matches)
+        $euroVariants = '(?:[Aa]vroya|[Aa]vro|eurót|[Ee]urot|euró|eurų|EUR|[Ee]uro)';
+        $amountPattern = '(\{[a-zA-Z_]+\}|\d+(?:[.,\s]\d+)*)';
+
+        // "amount <euro-variant>" → "€amount"
+        $text = preg_replace('/' . $amountPattern . '\s*' . $euroVariants . '\b/u', '€$1', $text);
+
+        // "amount €" → "€amount"
+        $text = preg_replace('/' . $amountPattern . '\s*€/u', '€$1', $text);
+
+        // Replace any remaining standalone euro variants with €
+        $text = preg_replace('/\b' . $euroVariants . '\b/u', '€', $text);
+
+        return $text;
     }
 
     private function convertLanguageCode($languageCode) {
