@@ -528,6 +528,8 @@ class DocumentTranslator {
     }
 
     private function fixEuroSymbolPosition($text) {
+        // Remove typographic double-quote characters introduced by translation
+        $text = str_replace(["\u{201C}", "\u{201D}", "\u{201E}", "\u{201F}"], '', $text);
         // Euro word variants across languages (longest first to prevent partial matches)
         $euroVariants = '(?:'
             . '[Aa]vroya'   // Turkish dative
