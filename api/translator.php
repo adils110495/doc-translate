@@ -528,18 +528,38 @@ class DocumentTranslator {
     }
 
     private function fixEuroSymbolPosition($text) {
-        // All Euro word variants (longest first to avoid partial matches)
-        $euroVariants = '(?:[Aa]vroya|[Aa]vro|eurót|[Ee]urot|euró|eurų|EUR|[Ee]uro)';
+        // Euro word variants across languages (longest first to prevent partial matches)
+        $euroVariants = '(?:'
+            . '[Aa]vroya'   // Turkish dative
+            . '|[Aa]vro'    // Turkish
+            . '|eurót'      // Hungarian accusative
+            . '|[Ee]urot'   // Estonian/Finnish plural
+            . '|euroa'      // Finnish partitive
+            . '|euron'      // Finnish/Estonian genitive
+            . '|evrum'      // Bosnian/Croatian
+            . '|evrov'      // Slovenian genitive
+            . '|euró'       // Hungarian
+            . '|eurų'       // Lithuanian
+            . '|ευρώ'       // Greek
+            . '|евро'       // Russian/Bulgarian
+            . '|евра'       // Serbian/Macedonian (Cyrillic)
+            . '|євро'       // Ukrainian
+            . '|եվրο'       // Armenian
+            . '|ევრო'       // Georgian
+            . '|אירו'       // Hebrew
+            . '|欧元'        // Chinese
+            . '|[Ee]uro'    // English/Latin
+            . '|EUR'        // Code
+            . '|eiro'       // Latvian
+            . '|evra'       // Serbian/Croatian (Latin)
+            . ')';
         $amountPattern = '(\{[a-zA-Z_]+\}|\d+(?:[.,\s]\d+)*)';
 
-        // "amount <euro-variant>" → "€amount"
+        // Only replace when paired with an amount: "amount <euro-variant>" → "€amount"
         $text = preg_replace('/' . $amountPattern . '\s*' . $euroVariants . '\b/u', '€$1', $text);
 
         // "amount €" → "€amount"
         $text = preg_replace('/' . $amountPattern . '\s*€/u', '€$1', $text);
-
-        // Replace any remaining standalone euro variants with €
-        $text = preg_replace('/\b' . $euroVariants . '\b/u', '€', $text);
 
         return $text;
     }
