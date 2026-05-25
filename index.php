@@ -18,6 +18,9 @@
                     <button class="refresh-btn icon-btn" onclick="loadTranslatedFiles()" title="Refresh">
                         <i class="fas fa-sync-alt"></i>
                     </button>
+                    <button class="icon-btn" id="btn-show-hidden" onclick="toggleShowHidden()" title="Show Hidden Items">
+                        <i class="fas fa-eye"></i>
+                    </button>
                     <button class="icon-btn" onclick="openManageHidden()" title="Manage Hidden Items">
                         <i class="fas fa-eye-slash"></i>
                     </button>

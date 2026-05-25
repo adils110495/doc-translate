@@ -494,6 +494,53 @@ body {
     display: none;
 }
 
+/* Show-hidden mode: dimmed appearance for hidden items */
+.project-group.is-hidden,
+.topic-group.is-hidden {
+    opacity: 0.6;
+    border-left: 3px solid #e67e22;
+}
+
+.project-group.is-hidden .project-title,
+.topic-group.is-hidden .topic-title {
+    background: #fdf3e7;
+}
+
+.hidden-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #e67e22;
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 3px;
+    margin-left: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.panel-header .icon-btn {
+    color: white;
+}
+
+.panel-header .icon-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+}
+
+/* Active state for the show-hidden toggle button */
+.panel-header .icon-btn.active {
+    background: #e67e22;
+    color: white;
+}
+
+.panel-header .icon-btn.active:hover {
+    background: #cf6d17;
+    color: white;
+}
+
 /* Radio Group */
 .radio-group {
     display: flex;

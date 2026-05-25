@@ -13,6 +13,7 @@ if (file_exists($hiddenFile)) {
 }
 $hiddenProjects = array_map('strtolower', $hiddenItems['projects'] ?? []);
 $hiddenTopics = array_map('strtolower', $hiddenItems['topics'] ?? []);
+$showHidden = isset($_GET['show_hidden']) && $_GET['show_hidden'] === '1';
 
 try {
     if (!is_dir(TRANSLATED_DIR)) {
@@ -35,8 +36,9 @@ try {
             continue;
         }
 
-        // Skip hidden projects
-        if (in_array(strtolower($project), $hiddenProjects)) {
+        // Skip hidden projects (unless show_hidden is requested)
+        $projectIsHidden = in_array(strtolower($project), $hiddenProjects);
+        if ($projectIsHidden && !$showHidden) {
             continue;
         }
 
@@ -52,8 +54,9 @@ try {
                 continue;
             }
 
-            // Skip hidden topics
-            if (in_array(strtolower($topic), $hiddenTopics)) {
+            // Skip hidden topics (unless show_hidden is requested)
+            $topicIsHidden = in_array(strtolower($topic), $hiddenTopics);
+            if ($topicIsHidden && !$showHidden) {
                 continue;
             }
 
@@ -105,7 +108,9 @@ try {
 
     echo json_encode([
         'success' => true,
-        'files' => $files
+        'files' => $files,
+        'hidden_projects' => $showHidden ? $hiddenItems['projects'] : [],
+        'hidden_topics'   => $showHidden ? $hiddenItems['topics']   : [],
     ]);
 
 } catch (Exception $e) {

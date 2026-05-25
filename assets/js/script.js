@@ -1,5 +1,8 @@
 // Cached files data for client-side filtering
 let cachedFilesData = null;
+let showHiddenMode = false;
+let hiddenProjectsList = [];
+let hiddenTopicsList = [];
 
 // Toast notification configuration
 toastr.options = {
@@ -383,15 +386,33 @@ function populateSourceFilesDropdown(files) {
 
 // ─── Translated Files ─────────────────────────────────────────────────────────
 
+function toggleShowHidden() {
+    showHiddenMode = !showHiddenMode;
+    const btn = document.getElementById('btn-show-hidden');
+    if (showHiddenMode) {
+        btn.classList.add('active');
+        btn.title = 'Hide Hidden Items';
+    } else {
+        btn.classList.remove('active');
+        btn.title = 'Show Hidden Items';
+        hiddenProjectsList = [];
+        hiddenTopicsList = [];
+    }
+    loadTranslatedFiles();
+}
+
 function loadTranslatedFiles() {
+    const url = showHiddenMode ? 'api/get_files.php?show_hidden=1' : 'api/get_files.php';
     $.ajax({
-        url: 'api/get_files.php',
+        url: url,
         type: 'GET',
         success: function(response) {
             try {
                 const data = typeof response === 'string' ? JSON.parse(response) : response;
                 if (data.success) {
                     cachedFilesData = data.files;
+                    hiddenProjectsList = (data.hidden_projects || []).map(function(p) { return p.toLowerCase(); });
+                    hiddenTopicsList   = (data.hidden_topics   || []).map(function(t) { return t.toLowerCase(); });
                     populateProjectDropdown();
                     applyFilters();
                 } else {
@@ -490,19 +511,31 @@ function displayFiles(files) {
     let html = '';
 
     for (const project in files) {
-        html += '<div class="project-group">';
+        const projectHidden = hiddenProjectsList.includes(project.toLowerCase());
+        html += '<div class="project-group' + (projectHidden ? ' is-hidden' : '') + '">';
         html += '<div class="project-title">';
         html += '<span>' + escapeHtml(project) + '</span>';
-        html += '<button style="margin-left:8px;background:#95a5a6;color:white;border:none;border-radius:3px;padding:2px 8px;font-size:11px;cursor:pointer;" onmouseover="this.style.background=\'#e74c3c\'" onmouseout="this.style.background=\'#95a5a6\'" onclick="hideItem(\'project\', \'' + escapeHtml(project) + '\')" title="Hide project"><i class="fas fa-eye-slash"></i></button>';
+        if (projectHidden) {
+            html += '<span class="hidden-badge"><i class="fas fa-eye-slash"></i> hidden</span>';
+            html += '<button style="margin-left:8px;background:#27ae60;color:white;border:none;border-radius:3px;padding:2px 8px;font-size:11px;cursor:pointer;" onclick="unhideItem(\'project\', \'' + escapeHtml(project) + '\')" title="Unhide project"><i class="fas fa-eye"></i></button>';
+        } else {
+            html += '<button style="margin-left:8px;background:#95a5a6;color:white;border:none;border-radius:3px;padding:2px 8px;font-size:11px;cursor:pointer;" onmouseover="this.style.background=\'#e74c3c\'" onmouseout="this.style.background=\'#95a5a6\'" onclick="hideItem(\'project\', \'' + escapeHtml(project) + '\')" title="Hide project"><i class="fas fa-eye-slash"></i></button>';
+        }
         html += '</div>';
 
         for (const topic in files[project]) {
             const topicFiles = files[project][topic];
+            const topicHidden = hiddenTopicsList.includes(topic.toLowerCase());
 
-            html += '<div class="topic-group">';
+            html += '<div class="topic-group' + (topicHidden ? ' is-hidden' : '') + '">';
             html += '<div class="topic-title">';
             html += '<span>' + escapeHtml(topic) + '</span>';
-            html += '<button style="margin-left:8px;background:#95a5a6;color:white;border:none;border-radius:3px;padding:2px 8px;font-size:11px;cursor:pointer;" onmouseover="this.style.background=\'#e74c3c\'" onmouseout="this.style.background=\'#95a5a6\'" onclick="hideItem(\'topic\', \'' + escapeHtml(topic) + '\')" title="Hide topic"><i class="fas fa-eye-slash"></i></button>';
+            if (topicHidden) {
+                html += '<span class="hidden-badge"><i class="fas fa-eye-slash"></i> hidden</span>';
+                html += '<button style="margin-left:8px;background:#27ae60;color:white;border:none;border-radius:3px;padding:2px 8px;font-size:11px;cursor:pointer;" onclick="unhideItem(\'topic\', \'' + escapeHtml(topic) + '\')" title="Unhide topic"><i class="fas fa-eye"></i></button>';
+            } else {
+                html += '<button style="margin-left:8px;background:#95a5a6;color:white;border:none;border-radius:3px;padding:2px 8px;font-size:11px;cursor:pointer;" onmouseover="this.style.background=\'#e74c3c\'" onmouseout="this.style.background=\'#95a5a6\'" onclick="hideItem(\'topic\', \'' + escapeHtml(topic) + '\')" title="Hide topic"><i class="fas fa-eye-slash"></i></button>';
+            }
             html += '</div>';
 
             // Group files by source document (base name without lang+timestamp)
