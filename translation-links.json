@@ -1,0 +1,1322 @@
+{
+  "delay": {
+    "en": {
+      "link": "https://www.lennuabi.com/flight-delay-compensation/",
+      "translations": [
+        "delay",
+        "delays",
+        "delayed",
+        "delay of flight",
+        "flight delay",
+        "flight delays",
+        "delayed flight",
+        "flight delayed",
+        "flight was delayed",
+        "delay in flight",
+        "delay of the flight",
+        "flight is delayed",
+        "flight has been delayed",
+        "delayed flights",
+        "delay occurred",
+        "delay occurs"
+      ]
+    },
+    "da": {
+      "link": "https://www.lennuabi.com/da/kompensation-for-flyforsinkelse/",
+      "translations": [
+        "forsinkelse",
+        "forsinkelser",
+        "forsinket",
+        "flyforsinkelse",
+        "forsinkelse af fly",
+        "fly forsinket",
+        "flyet er forsinket",
+        "flyet var forsinket",
+        "flyet blev forsinket",
+        "forsinket fly"
+      ]
+    },
+    "nl": {
+      "link": "https://www.lennuabi.com/nl/compensatie-bij-vluchtvertraging/",
+      "translations": [
+        "vertraging",
+        "vertragingen",
+        "vertraagd",
+        "vluchtvertraging",
+        "vertraging van de vlucht",
+        "vlucht vertraagd",
+        "vlucht was vertraagd",
+        "vlucht is vertraagd",
+        "vertraagde vlucht",
+        "vertraagde vluchten"
+      ]
+    },
+    "et": {
+      "link": "https://www.lennuabi.com/ee/leenu-hilinemise-huvitis/",
+      "translations": [
+        "viibis",
+        "hilinemisi",
+        "hilinemise",
+        "hilinemine",
+        "hilinemised",
+        "hilinenud",
+        "lennu hilinemine",
+        "viivitus",
+        "viibivad",
+        "viivästyvät",
+        "hilinemiste",
+        "lend hilinenud",
+        "lend hilineb",
+        "lend hilines",
+        "hilinenud lend",
+        "hilinev lend"
+      ]
+    },
+    "fi": {
+      "link": "https://www.lennuabi.com/fi/korvaus-lennon-viivastymisesta/",
+      "translations": [
+        "viivästyi",
+        "viivästyksiä",
+        "viivästyksiä",
+        "viivästyksiä",
+        "viivästys",
+        "viivästykset",
+        "viivästynyt",
+        "lennon viivästyminen",
+        "viive",
+        "lento viivästynyt",
+        "lento myöhässä",
+        "lento oli myöhässä",
+        "viivästyvät",
+        "viivästynyt lento",
+        "viivästyneet lennot",
+        "töf"
+      ]
+    },
+    "de": {
+      "link": "https://www.lennuabi.com/de/entschadigung-bei-flugverspatung/",
+      "translations": [
+        "verspätung",
+        "verspätungen",
+        "verspätet",
+        "flugverspätung",
+        "flug verspätet",
+        "verzögert",
+        "der flug war verspätet",
+        "flug ist verspätet",
+        "flug hatte verspätung",
+        "verspäteter flug"
+      ]
+    },
+    "is": {
+      "link": "https://www.lennuabi.com/is/baetur-vegna-seinkunar-a-flugi/",
+      "translations": [
+        "tafðist",
+        "flugseinkunum",
+        "flugseinkunum",
+        "tafir",
+        "seinkun",
+        "seinkanir",
+        "seinkað",
+        "seinkun flugs",
+        "seinkaðar",
+        "flug seinkað",
+        "flugið seinkaði",
+        "seinkað flug",
+        "töf"
+      ]
+    },
+    "lv": {
+      "link": "https://www.lennuabi.com/lv/lidojuma-kavesanas-kompensacija/",
+      "translations": [
+        "aizkavējies",
+        "kavēšanos",
+        "kavējumi",
+        "kavējumu",
+        "kavēšanās",
+        "aizkavēšanās",
+        "aizkavēts",
+        "lidojuma kavēšanās",
+        "aizkavēšana",
+        "lidojuma aizkavēšanās",
+        "aizkavēti",
+        "lidojums aizkavēts",
+        "lidojums kavējās",
+        "aizkavēts lidojums",
+        "aizkavēts",
+        "aizkavējušies"
+      ]
+    },
+    "no": {
+      "link": "https://www.lennuabi.com/no/kompensasjon-for-flyforsinkelse/",
+      "translations": [
+        "flyforsinkelser",
+        "forsinkelse",
+        "forsinkelser",
+        "forsinket",
+        "flyforsinkelse",
+        "forsinkelse av flyet",
+        "fly forsinket",
+        "flyet var forsinket",
+        "flyet er forsinket",
+        "forsinket fly"
+      ]
+    },
+    "ro": {
+      "link": "https://www.lennuabi.com/ro/despagubiri-pentru-intarzierea-zborului/",
+      "translations": [
+        "întârziere",
+        "întârzieri",
+        "întârziat",
+        "întârziere zbor",
+        "întârzierea zborului",
+        "zbor întârziat",
+        "zborul a fost întârziat",
+        "zborul este întârziat"
+      ]
+    },
+    "ru": {
+      "link": "https://www.lennuabi.com/ru/kompensacija-za-zaderzhku-reisa/",
+      "translations": [
+        "задержана",
+        "задержка",
+        "задержки",
+        "задержанный",
+        "задержка рейса",
+        "задержек",
+        "рейс задержан",
+        "отложенный",
+        "рейс был задержан",
+        "задержанный рейс",
+        "задержан"
+      ]
+    },
+    "sv": {
+      "link": "https://www.lennuabi.com/sv/ersattning-vid-flygforsening/",
+      "translations": [
+        "flygförseningar",
+        "försening",
+        "förseningar",
+        "försenad",
+        "flygförsening",
+        "fördröjning",
+        "försening av flyg",
+        "flyg försenat",
+        "försenat flyg",
+        "flygningen var försenad",
+        "försenade flyg",
+        "försenat",
+        "förseningen"
+      ]
+    }
+  },
+  "cancelled": {
+    "en": {
+      "link": "https://www.lennuabi.com/flight-cancellation-compensation/",
+      "translations": [
+        "cancel",
+        "cancelled",
+        "canceled",
+        "cancellation",
+        "cancellations",
+        "cancel flight",
+        "flight cancellation",
+        "flight cancelled",
+        "flight was cancelled",
+        "flight cancellations",
+        "flight is cancelled",
+        "flight has been cancelled",
+        "cancelled flight",
+        "cancelled flights"
+      ]
+    },
+    "da": {
+      "link": "https://www.lennuabi.com/da/kompensation-for-aflyst-fly/",
+      "translations": [
+        "aflyse flyvninger",
+        "aflyse",
+        "aflyst",
+        "aflysning",
+        "aflysninger",
+        "aflyse fly",
+        "annullere",
+        "aflys flyet",
+        "aflysning af fly",
+        "fly aflyst",
+        "flyet blev aflyst",
+        "aflysninger af fly",
+        "aflyst fly"
+      ]
+    },
+    "nl": {
+      "link": "https://www.lennuabi.com/nl/compensatie-bij-vluchtannulering/",
+      "translations": [
+        "vluchten te annuleren",
+        "annuleren",
+        "geannuleerd",
+        "annulering",
+        "annuleringen",
+        "vlucht annuleren",
+        "vluchtannulering",
+        "vlucht geannuleerd",
+        "vlucht werd geannuleerd",
+        "vluchtannuleringen",
+        "geannuleerde vlucht"
+      ]
+    },
+    "et": {
+      "link": "https://www.lennuabi.com/ee/lennu-tuhistamise-huvitis/",
+      "translations": [
+        "tühistamisi",
+        "tühistamise",
+        "tühistama",
+        "tühistatud",
+        "tühistamine",
+        "tühistamised",
+        "lendu tühistama",
+        "tühistada",
+        "lennu tühistamine",
+        "lend tühistatud",
+        "lend on tühistatud",
+        "lend tühistati",
+        "tühistatakse",
+        "lendude tühistamine",
+        "tühistatud lend",
+        "tühistati"
+      ]
+    },
+    "fi": {
+      "link": "https://www.lennuabi.com/fi/korvaus-lennon-peruuntumisesta/",
+      "translations": [
+        "peruutuksia",
+        "peruutuksia",
+        "perumaan",
+        "peruuttaa",
+        "peruutettu",
+        "peruutus",
+        "peruutukset",
+        "peruuttaa lento",
+        "lennon peruutus",
+        "lento peruutettu",
+        "lento peruttu",
+        "lento peruttiin",
+        "peruutetaan",
+        "lentojen peruutukset",
+        "peruutettu lento",
+        "peruutuksen",
+        "afpöntun",
+        "peruminen",
+        "peruutettiin",
+        "peruutuminen"
+      ]
+    },
+    "de": {
+      "link": "https://www.lennuabi.com/de/entschadigung-bei-flugannullierung/",
+      "translations": [
+        "ausfälle",
+        "streichen",
+        "stornieren",
+        "annulliert",
+        "annullierung",
+        "annullierungen",
+        "flug stornieren",
+        "kündigen",
+        "flugannullierung",
+        "flug annulliert",
+        "abgesagt",
+        "flug gestrichen",
+        "der flug wurde annulliert",
+        "stornierungen",
+        "flugannullierungen",
+        "annullierter flug",
+        "ausfiel",
+        "ausfielen"
+      ]
+    },
+    "is": {
+      "link": "https://www.lennuabi.com/is/baetur-vegna-aflysingar-a-flugi/",
+      "translations": [
+        "flugafbókanir",
+        "flugafbókunum",
+        "aflýsa",
+        "aflýst",
+        "aflýsing",
+        "aflýsingar",
+        "aflýsa flugi",
+        "afbókaðar",
+        "flug aflýst",
+        "flugaflýsingar",
+        "aflýst flug",
+        "afpöntun",
+        "fellt niður"
+      ]
+    },
+    "lv": {
+      "link": "https://www.lennuabi.com/lv/lidojuma-atcelsanas-kompensacija/",
+      "translations": [
+        "atcelt",
+        "atcelts",
+        "atcelšana",
+        "atcelt lidojumu",
+        "lidojuma atcelšana",
+        "lidojums atcelts",
+        "atcelts lidojums",
+        "lidojums tika atcelts",
+        "lidojumu atcelšana",
+        "atcelts reiss",
+        "atcelts"
+      ]
+    },
+    "no": {
+      "link": "https://www.lennuabi.com/no/kompensasjon-for-kansellert-fly/",
+      "translations": [
+        "avlyse",
+        "avlyst",
+        "kansellert",
+        "kanselleringer",
+        "avlyse fly",
+        "avbryte",
+        "kansellere fly",
+        "kansellering av fly",
+        "fly avlyst",
+        "innstilt fly",
+        "flyet ble innstilt",
+        "kanselleringer av flyvninger",
+        "avlyst fly",
+        "kanselleringen",
+        "innstilt"
+      ]
+    },
+    "ro": {
+      "link": "https://www.lennuabi.com/ro/despagubiri-pentru-anularea-zborului/",
+      "translations": [
+        "anuleze",
+        "anula",
+        "anulat",
+        "anulare",
+        "anulări",
+        "anula zbor",
+        "anularea zborului",
+        "zbor anulat",
+        "zborul a fost anulat",
+        "anulări de zbor",
+        "zboruri anulate"
+      ]
+    },
+    "ru": {
+      "link": "https://www.lennuabi.com/ru/kompensacija-za-otmenu-reisa/",
+      "translations": [
+        "отмены рейсов",
+        "отменять рейсы",
+        "отменить",
+        "отменённый",
+        "отменено",
+        "отмены",
+        "отменить рейс",
+        "отмена рейса",
+        "рейс отменён",
+        "рейс был отменен",
+        "отмена рейсов",
+        "отменённый рейс",
+        "отменен"
+      ]
+    },
+    "sv": {
+      "link": "https://www.lennuabi.com/sv/ersattning-for-installt-flyg/",
+      "translations": [
+        "ställa in flygningar",
+        "ställa in",
+        "inställd",
+        "avbokning",
+        "avbokningar",
+        "ställa in flyg",
+        "avboka",
+        "inställt flyg",
+        "flyg inställt",
+        "avbruten",
+        "flygningen ställdes in",
+        "inställda flyg",
+        "inställt flygplan",
+        "inställningen",
+        "inställt",
+        "inställningen"
+      ]
+    }
+  },
+  "missed": {
+    "en": {
+      "link": "https://www.lennuabi.com/missed-connection-compensation/",
+      "translations": [
+        "missed",
+        "miss",
+        "missed flight",
+        "missed connection",
+        "missing",
+        "flight missed",
+        "missed flights",
+        "connection missed",
+        "missed my flight",
+        "missed the flight"
+      ]
+    },
+    "da": {
+      "link": "https://www.lennuabi.com/da/kompensation-for-en-misset-flyrejse/",
+      "translations": [
+        "misset",
+        "miste",
+        "misset fly",
+        "misset forbindelse",
+        "mangler",
+        "mistet forbindelse",
+        "flyet blev misset",
+        "misset tilslutning",
+        "glip"
+      ]
+    },
+    "nl": {
+      "link": "https://www.lennuabi.com/nl/compensatie-bij-gemiste-aansluiting/",
+      "translations": [
+        "gemist",
+        "missen",
+        "vlucht gemist",
+        "aansluiting gemist",
+        "gemiste vlucht",
+        "gemiste aansluiting",
+        "vlucht is gemist",
+        "gemiste vluchten",
+        "mislopen"
+      ]
+    },
+    "et": {
+      "link": "https://www.lennuabi.com/ee/uhenduse-kaotamise-huvitis/",
+      "translations": [
+        "maha jäänud",
+        "mahajäämine",
+        "lend maha jäänud",
+        "vahelejäänud",
+        "mahajäänud lend",
+        "kadunud ühendus",
+        "lend jäi vahele",
+        "ühendus jäi vahele",
+        "ei lubatud lennukile"
+      ]
+    },
+    "fi": {
+      "link": "https://www.lennuabi.com/fi/korvaus-jatkolennolta-myohastymisesta/",
+      "translations": [
+        "myöhästynyt",
+        "myöhästyä",
+        "lento jäi väliin",
+        "kaipasin",
+        "myöhästynyt lento",
+        "menetetty yhteys",
+        "lento jäi väliin",
+        "yhteys jäi väliin",
+        "menettävät"
+      ]
+    },
+    "de": {
+      "link": "https://www.lennuabi.com/de/entschadigung-bei-verpasstem-anschlussflug/",
+      "translations": [
+        "verpasst",
+        "verpassen",
+        "flug verpasst",
+        "anschluss verpasst",
+        "verpasster flug",
+        "verpasste verbindung",
+        "flug wurde verpasst",
+        "anschluss wurde verpasst"
+      ]
+    },
+    "is": {
+      "link": "https://www.lennuabi.com/is/baetur-vegna-misst-af-tengiflugi/",
+      "translations": [
+        "misst",
+        "missa",
+        "flug misst",
+        "flugið misst",
+        "tenging misst"
+      ]
+    },
+    "lv": {
+      "link": "https://www.lennuabi.com/lv/nokaveta-savienoto-lidojumu-kompensacija/",
+      "translations": [
+        "nokavēts",
+        "nokavēt",
+        "nokavēts lidojums",
+        "garām",
+        "nokavēts savienojums",
+        "lidojums nokavēts",
+        "zaudē"
+      ]
+    },
+    "no": {
+      "link": "https://www.lennuabi.com/no/kompensasjon-for-tapt-tilkoblingsfly/",
+      "translations": [
+        "mistet",
+        "miste",
+        "mistet fly",
+        "savnet",
+        "uteblitt fly",
+        "mistet forbindelsen",
+        "flyet ble mistet",
+        "glipp"
+      ]
+    },
+    "ro": {
+      "link": "https://www.lennuabi.com/ro/despagubiri-pentru-ratarea-zborului-de-legatura/",
+      "translations": [
+        "pierdut",
+        "pierde",
+        "zbor pierdut",
+        "ratat",
+        "zbor ratat",
+        "conexiune ratată",
+        "zborul a fost pierdut",
+        "pierd"
+      ]
+    },
+    "ru": {
+      "link": "https://www.lennuabi.com/ru/kompensacija-za-propushchenuyu-peresadku/",
+      "translations": [
+        "пропущенный",
+        "пропустить",
+        "пропущен рейс",
+        "пропущенный рейс",
+        "упущенная связь",
+        "рейс был пропущен",
+        "упускают"
+      ]
+    },
+    "sv": {
+      "link": "https://www.lennuabi.com/sv/kompensation-for-missad-anslutning/",
+      "translations": [
+        "missad",
+        "missa",
+        "missat flyg",
+        "missade",
+        "missad flygning",
+        "missad anslutning",
+        "flyget missades",
+        "miste"
+      ]
+    }
+  },
+  "airline_strike": {
+    "en": {
+      "link": "https://www.lennuabi.com/airline-strike-compensation/",
+      "translations": [
+        "airline strike",
+        "aviation strike",
+        "pilot strike",
+        "strike",
+        "airline strikes",
+        "aviation strikes",
+        "pilots strike",
+        "strike by airline",
+        "airline staff strike"
+      ]
+    },
+    "da": {
+      "link": "https://www.lennuabi.com/da/kompensation-for-strejke-hos-flyselskab/",
+      "translations": [
+        "flystrejke",
+        "strejke",
+        "luftfartsstrejke",
+        "strejke hos flyselskab",
+        "pilotstrejke",
+        "strejker",
+        "flyselskabsstrejke"
+      ]
+    },
+    "nl": {
+      "link": "https://www.lennuabi.com/nl/compensatie-bij-staking-van-de-luchtvaartmaatschappij/",
+      "translations": [
+        "luchtvaartstaking",
+        "staking",
+        "vliegtuigstaking",
+        "pilotenstaking",
+        "stakingen",
+        "staking bij luchtvaartmaatschappij",
+        "Stakingen"
+      ]
+    },
+    "et": {
+      "link": "https://www.lennuabi.com/ee/huvitis-lennufirma-streigi-korral/",
+      "translations": [
+        "lennufirma streik",
+        "streik",
+        "lennuliinide streik",
+        "lennundusstreik",
+        "pilootide streik",
+        "streigid"
+      ]
+    },
+    "fi": {
+      "link": "https://www.lennuabi.com/fi/korvaus-lentoyhtion-lakosta/",
+      "translations": [
+        "lentoyhtiön lakko",
+        "lakko",
+        "lentolakko",
+        "lentäjien lakko",
+        "lakot",
+        "lentoyhtiöiden lakko"
+      ]
+    },
+    "de": {
+      "link": "https://www.lennuabi.com/de/entschadigung-bei-streiks-der-fluggesellschaft/",
+      "translations": [
+        "flugstreik",
+        "streik",
+        "luftfahrtstreik",
+        "streik der fluggesellschaften",
+        "fliegerstreik",
+        "pilotenstreik",
+        "streiks",
+        "streik bei fluggesellschaft"
+      ]
+    },
+    "is": {
+      "link": "https://www.lennuabi.com/is/baetur-vegna-verkfalls-flugfelaga/",
+      "translations": [
+        "flugmannaverkfall",
+        "verkfall",
+        "verkföll",
+        "flugverkfall"
+      ]
+    },
+    "lv": {
+      "link": "https://www.lennuabi.com/lv/aviokompanijas-streika-kompensacija/",
+      "translations": [
+        "aviokompānijas streiks",
+        "streiks",
+        "aviosabiedrības streiks",
+        "aviācijas streiks",
+        "pilotu streiks",
+        "streiki"
+      ]
+    },
+    "no": {
+      "link": "https://www.lennuabi.com/no/kompensasjon-for-flystreik/",
+      "translations": [
+        "flystreik",
+        "streik",
+        "pilotstreik",
+        "streiker",
+        "streik i flyselskap"
+      ]
+    },
+    "ro": {
+      "link": "https://www.lennuabi.com/ro/despagubiri-in-caz-de-greva-a-companiilor-aeriene/",
+      "translations": [
+        "grevă aeriană",
+        "grevă",
+        "grevă aviatică",
+        "grevă a piloților",
+        "greve",
+        "grevă în aviație"
+      ]
+    },
+    "ru": {
+      "link": "https://www.lennuabi.com/ru/kompensacija-za-zabastovku-aviakompanii/",
+      "translations": [
+        "забастовка авиакомпании",
+        "забастовка",
+        "забастовка авиакомпаний",
+        "авиационная забастовка",
+        "забастовка пилотов",
+        "забастовки",
+        "забастовка в авиации"
+      ]
+    },
+    "sv": {
+      "link": "https://www.lennuabi.com/sv/ersattning-vid-strejk-hos-flygbolag/",
+      "translations": [
+        "flygstrejk",
+        "strejk",
+        "strejk på flygbolag",
+        "pilotstrejk",
+        "strejker",
+        "flygbolagsstrejk"
+      ]
+    }
+  },
+  "overbooking": {
+    "en": {
+      "link": "https://www.lennuabi.com/overbooked-flight-compensation/",
+      "translations": [
+        "overbooking",
+        "overbooked",
+        "flight overbooking",
+        "overbooked flight",
+        "overbookings",
+        "flight overbooked",
+        "overbooking of flight"
+      ]
+    },
+    "da": {
+      "link": "https://www.lennuabi.com/da/kompensation-for-overbooking/",
+      "translations": [
+        "overbooking",
+        "overbooket",
+        "overbooking af fly",
+        "overbooket fly",
+        "overbookinger"
+      ]
+    },
+    "nl": {
+      "link": "https://www.lennuabi.com/nl/compensatie-bij-overboeking/",
+      "translations": [
+        "overboeking",
+        "overboekt",
+        "overboekte vlucht",
+        "overboekingen"
+      ]
+    },
+    "et": {
+      "link": "https://www.lennuabi.com/ee/huvitis-ulebroneeringu-korral/",
+      "translations": [
+        "ülebroneerimine",
+        "ülebroneeritud",
+        "lennu ülebroneerimine",
+        "ülebroneeritud lend",
+        "ülebroneerimised",
+        "ülebroneeritud",
+        "ülebroneeringu"
+      ]
+    },
+    "fi": {
+      "link": "https://www.lennuabi.com/fi/korvaus-ylivaratusta-lennosta/",
+      "translations": [
+        "ylivaraus",
+        "ylivarattu",
+        "ylivaraukset",
+        "lennon ylivaraus",
+        "ylivarattu lento",
+        "ylivaraukset lennolla",
+        "ylivarauksen"
+      ]
+    },
+    "de": {
+      "link": "https://www.lennuabi.com/de/entschadigung-bei-uberbuchung/",
+      "translations": [
+        "überbuchung",
+        "überbucht",
+        "flugüberbuchung",
+        "überbuchter flug",
+        "überbuchungen"
+      ]
+    },
+    "is": {
+      "link": "https://www.lennuabi.com/is/baetur-vegna-ofbokunar/",
+      "translations": [
+        "ofbókun",
+        "ofbókað",
+        "ofbókanir"
+      ]
+    },
+    "lv": {
+      "link": "https://www.lennuabi.com/lv/virsrezervacijas-kompensacija/",
+      "translations": [
+        "virsrezervēšana",
+        "pārrezervēts",
+        "pārrezervēšana",
+        "lidojumu rezervācijas pārsniegšana",
+        "pārrezervēts lidojums",
+        "virsrezervēšanas gadījums",
+        "pārpārdošanas"
+      ]
+    },
+    "no": {
+      "link": "https://www.lennuabi.com/no/kompensasjon-for-overbooking/",
+      "translations": [
+        "overbooking",
+        "overbooket",
+        "overbooking av fly",
+        "overbooket fly",
+        "overbookinger"
+      ]
+    },
+    "ro": {
+      "link": "https://www.lennuabi.com/ro/despagubiri-pentru-suprarezervare/",
+      "translations": [
+        "suprarezervare",
+        "suprarezervat",
+        "overbooking de zbor",
+        "zbor suprarezervat",
+        "suprarezervări"
+      ]
+    },
+    "ru": {
+      "link": "https://www.lennuabi.com/ru/kompensacija-za-overbuking/",
+      "translations": [
+        "овербукинг",
+        "перебронирование",
+        "перебронирование рейсов",
+        "перебронированный рейс",
+        "овербукинг рейса",
+        "перебронирования"
+      ]
+    },
+    "sv": {
+      "link": "https://www.lennuabi.com/sv/ersattning-for-overbokning/",
+      "translations": [
+        "överbokning",
+        "överbokad",
+        "överbokning av flyg",
+        "överbokat flyg",
+        "överbokningar"
+      ]
+    }
+  },
+  "denied_boarding": {
+    "en": {
+      "link": "https://www.lennuabi.com/denied-boarding-compensation/",
+      "translations": [
+        "denied boarding",
+        "boarding denied",
+        "refused boarding",
+        "denied",
+        "refused",
+        "boarding refusal",
+        "denial of boarding",
+        "denied boarding flight",
+        "flight boarding denied"
+      ]
+    },
+    "da": {
+      "link": "https://www.lennuabi.com/da/kompensation-for-afvist-boarding/",
+      "translations": [
+        "nægtet boarding",
+        "nægtet",
+        "nægtet ombordstigning",
+        "boarding afvist",
+        "afvist",
+        "afvisning af boarding"
+      ]
+    },
+    "nl": {
+      "link": "https://www.lennuabi.com/nl/compensatie-bij-geweigerde-instap/",
+      "translations": [
+        "instapweigering",
+        "geweigerd",
+        "instappen geweigerd",
+        "weigering van instappen",
+        "niet werd toegelaten aan boord"
+      ]
+    },
+    "et": {
+      "link": "https://www.lennuabi.com/ee/huvitis-lennukist-mahajaamise-korral/",
+      "translations": [
+        "keeldutakse pardaleminekust",
+        "keeldutakse",
+        "pardale mittelubamine",
+        "lennureisist mahajätmine keelatud",
+        "pardaleminek keelatud",
+        "keeldus pardaleminekust",
+        "pardaleminekust keeldumine",
+        "ei lubatud lennule",
+        "keelati teile pardaleminek"
+      ]
+    },
+    "fi": {
+      "link": "https://www.lennuabi.com/fi/korvaus-lennolle-paasyn-epaamisesta/",
+      "translations": [
+        "evätään pääsy",
+        "evätty",
+        "pääsyn epääminen",
+        "pääsy lennolle evätty",
+        "lennollepääsy kielletty",
+        "lennolle pääsyn epääminen",
+        "pääsy evätty lennolle",
+        "evättiin pääsy lennolle",
+        "evättiin pääsy"
+      ]
+    },
+    "de": {
+      "link": "https://www.lennuabi.com/de/entschadigung-bei-verweigerter-beforderung/",
+      "translations": [
+        "nichtbeförderung",
+        "verweigert",
+        "einsteigen verweigert",
+        "verweigerte beförderung",
+        "beförderung verweigert",
+        "Boarding verweigert"
+      ]
+    },
+    "is": {
+      "link": "https://www.lennuabi.com/is/baetur-fyrir-synjada-um-bord/",
+      "translations": [
+        "meinað aðgang",
+        "meinað",
+        "neitað",
+        "neitað um borð"
+      ]
+    },
+    "lv": {
+      "link": "https://www.lennuabi.com/lv/atteikta-iekapsanas-kompensacija/",
+      "translations": [
+        "atteikta iekāpšana",
+        "atteikts",
+        "iekāpšanas atteikums",
+        "atteikta iekāpšana reisam"
+      ]
+    },
+    "no": {
+      "link": "https://www.lennuabi.com/no/kompensasjon-for-nektet-ombordstigning/",
+      "translations": [
+        "nektet ombordstigning",
+        "nektet",
+        "ombordstigning nektet",
+        "nektet adgang til fly"
+      ]
+    },
+    "ro": {
+      "link": "https://www.lennuabi.com/ro/despagubiri-pentru-refuzul-imbarcarii/",
+      "translations": [
+        "refuz la îmbarcare",
+        "refuzat",
+        "refuzat îmbarcarea",
+        "îmbarcare refuzată",
+        "refuzuri la îmbarcare",
+        "refuz de îmbarcare"
+      ]
+    },
+    "ru": {
+      "link": "https://www.lennuabi.com/ru/kompensacija-za-otkaz-v-pasadke/",
+      "translations": [
+        "отказ в посадке",
+        "отказано",
+        "отказа в посадке",
+        "отказ в посадке на рейс",
+        "отказано в посадке",
+        "отказали в посадке"
+      ]
+    },
+    "sv": {
+      "link": "https://www.lennuabi.com/sv/ersattning-for-nekad-ombordstigning/",
+      "translations": [
+        "nekad ombordstigning",
+        "nekad",
+        "ombordstigning nekad",
+        "nekad ombordstigning på flyg",
+        "nekades ombordstigning"
+      ]
+    }
+  },
+  "passengers_rights": {
+    "en": {
+      "link": "https://www.lennuabi.com/your-rights/",
+      "translations": [
+        "passengers' rights",
+        "passenger rights",
+        "air passenger rights",
+        "flight passenger rights",
+        "your rights",
+        "traveller rights",
+        "airline passenger rights",
+        "flight passenger protections"
+      ]
+    },
+    "da": {
+      "link": "https://www.lennuabi.com/da/kend-dine-rettigheder/",
+      "translations": [
+        "passagerrettigheder",
+        "rettigheder",
+        "passagerernes rettigheder",
+        "flypassagerers rettigheder",
+        "passagerers rettigheder",
+        "passagerrettighedslovgivning",
+        "passagervenlige luftfartsregler"
+      ]
+    },
+    "nl": {
+      "link": "https://www.lennuabi.com/nl/thekki-rettindi-thin/",
+      "translations": [
+        "passagiersrechten",
+        "rechten",
+        "rechten van luchtreizigers",
+        "rechten van vliegtuigpassagiers",
+        "rechten van passagiers",
+        "meest passagiersvriendelijke luchtvaartwetten"
+      ]
+    },
+    "et": {
+      "link": "https://www.lennuabi.com/ee/lennureisija-igused/",
+      "translations": [
+        "oma õiguste",
+        "reisijate õiguste",
+        "reisijate õigused",
+        "õigused",
+        "lennureisijate õigused",
+        "reisijaõigusi",
+        "reisija õigused",
+        "õigusakt"
+      ]
+    },
+    "fi": {
+      "link": "https://www.lennuabi.com/fi/korvaus-lennon-viivastymisesta/",
+      "translations": [
+        "oikeutesi",
+        "matkustajien oikeuksien",
+        "matkustajien oikeudet",
+        "oikeudet",
+        "lentomatkustajien oikeudet",
+        "matkustajan oikeudet",
+        "lentomatkustajan oikeudet",
+        "matkustajanoikeuslainsäädännön",
+        "matkustajaystävällisimmistä ilmailulakeista"
+      ]
+    },
+    "de": {
+      "link": "https://www.lennuabi.com/de/kennen-sie-ihre-rechte/",
+      "translations": [
+        "Passagierrechte",
+        "fluggastrechte",
+        "rechte",
+        "fahrgastrechte",
+        "rechte von fluggästen",
+        "passagierfreundlichsten Luftfahrtgesetze"
+      ]
+    },
+    "is": {
+      "link": "https://www.lennuabi.com/is/thekktu-rettindi-thin/",
+      "translations": [
+        "farþegarétti kanna",
+        "réttindi farþega",
+        "réttindi",
+        "réttindi flugfarþega",
+        "farþegaréttarlöggjafar"
+      ]
+    },
+    "lv": {
+      "link": "https://www.lennuabi.com/lv/zinie-savas-tiesibas/",
+      "translations": [
+        "savu tiesību",
+        "pasažieru tiesību",
+        "pasažieru tiesības",
+        "tiesības",
+        "aviopasažieru tiesības",
+        "lidojuma pasažieru tiesības",
+        "pasažieru tiesību",
+        "pasažieriem visdraudzīgākajiem aviācijas tiesību"
+      ]
+    },
+    "no": {
+      "link": "https://www.lennuabi.com/no/kjenn-dine-rettigheter/",
+      "translations": [
+        "passasjerrettigheter",
+        "rettigheter",
+        "passasjerers rettigheter",
+        "flypassasjerrettigheter",
+        "flypassasjerers rettigheter",
+        "rettigheter for passasjerer",
+        "rettighetene",
+        "passasjerrettighetslovgivning",
+        "mest passasjervennlige luftfartslovene"
+      ]
+    },
+    "ro": {
+      "link": "https://www.lennuabi.com/ro/aflati-va-drepturile/",
+      "translations": [
+        "drepturile pasagerilor",
+        "drepturi",
+        "drepturile pasagerilor aerieni",
+        "drepturile pasagerilor de zbor",
+        "drepturile călătorilor",
+        "legi din domeniul aviației"
+      ]
+    },
+    "ru": {
+      "link": "https://www.lennuabi.com/ru/prava-aviapasazhira/",
+      "translations": [
+        "защиту своих",
+        "правам пассажиров",
+        "своих прав",
+        "права пассажиров",
+        "права",
+        "права воздушных пассажиров",
+        "права авиапассажиров",
+        "права путешественников",
+        "пассажиров авиационных законов"
+      ]
+    },
+    "sv": {
+      "link": "https://www.lennuabi.com/sv/kann-till-dina-rattigheter/",
+      "translations": [
+        "passagerarrättigheter",
+        "rättigheter",
+        "passagerarnas rättigheter",
+        "flygpassagerares rättigheter",
+        "resenärers rättigheter",
+        "passagerarvänliga flyglagarna"
+      ]
+    }
+  },
+  "claim": {
+    "en": {
+      "link": "https://www.lennuabi.com/submit-claim/",
+      "translations": [
+        "claim",
+        "claims",
+        "compensation claim",
+        "compensation claims",
+        "file a claim",
+        "submit claim",
+        "submit a claim",
+        "make a claim",
+        "claim compensation"
+      ]
+    },
+    "da": {
+      "link": "https://www.lennuabi.com/da/submit-claim/",
+      "translations": [
+        "krav",
+        "erstatningskrav",
+        "anmeld et krav",
+        "kræve",
+        "indsende et krav"
+      ]
+    },
+    "nl": {
+      "link": "https://www.lennuabi.com/nl/declaratie-indienen/",
+      "translations": [
+        "claim",
+        "claims",
+        "schadeclaim",
+        "schadeclaims",
+        "een claim indienen",
+        "vergoeding",
+        "vorderingen",
+        "een schadeclaim indienen"
+      ]
+    },
+    "et": {
+      "link": "https://www.lennuabi.com/ee/esita-avaldus/",
+      "translations": [
+        "nõue",
+        "nõuded",
+        "hüvitisnõue",
+        "hüvitusnõuded",
+        "nõudeid",
+        "esitada nõue",
+        "taotleda",
+        "väidab",
+        "hüvitist taotlema"
+      ]
+    },
+    "fi": {
+      "link": "https://www.lennuabi.com/fi/submit-claim/",
+      "translations": [
+        "korvaushakemuksesi",
+        "hakea",
+        "vaatimus",
+        "vaatimukset",
+        "korvausvaatimus",
+        "korvausvaatimukset",
+        "tehdä korvausvaatimus",
+        "tehdä vaatimus"
+      ]
+    },
+    "de": {
+      "link": "https://www.lennuabi.com/de/submit-claim/",
+      "translations": [
+        "einzufordern",
+        "Forderungen",
+        "anspruch",
+        "ansprüche",
+        "entschädigungsanspruch",
+        "schadenersatzansprüche",
+        "entschädigungsantrag",
+        "eine klage einreichen",
+        "anspruch geltend machen"
+      ]
+    },
+    "is": {
+      "link": "https://www.lennuabi.com/is/leggja-fram-krofu/",
+      "translations": [
+        "krefjast",
+        "kröfu",
+        "krafa",
+        "kröfur",
+        "bótakrafa",
+        "leggja fram kröfu"
+      ]
+    },
+    "lv": {
+      "link": "https://www.lennuabi.com/lv/iesniegt-pretenziju/",
+      "translations": [
+        "pieprasīt",
+        "pieprasīt",
+        "prasību",
+        "pieprasīt",
+        "prasība",
+        "prasības",
+        "kompensācijas prasība",
+        "kompensācijas prasības",
+        "iesniegt prasību",
+        "prasīt kompensāciju"
+      ]
+    },
+    "no": {
+      "link": "https://www.lennuabi.com/no/submit-claim/",
+      "translations": [
+        "kravet",
+        "kreve",
+        "krav",
+        "kompensasjonskrav",
+        "erstatningskrav",
+        "sende inn et krav",
+        "fremme et krav"
+      ]
+    },
+    "ro": {
+      "link": "https://www.lennuabi.com/ro/submit-claim/",
+      "translations": [
+        "solicitați",
+        "solicite",
+        "cererea",
+        "solicita",
+        "cerere",
+        "cereri",
+        "cerere de despăgubire",
+        "cereri de despăgubire",
+        "depuneți o cerere",
+        "despăgubire",
+        "pretenții",
+        "solicitare de despăgubire"
+      ]
+    },
+    "ru": {
+      "link": "https://www.lennuabi.com/ru/esita-avaldus/?step=1",
+      "translations": [
+        "получить",
+        "получить",
+        "заявку",
+        "получить",
+        "требование",
+        "требования",
+        "заявление на компенсацию",
+        "претензия",
+        "претензии",
+        "требование о компенсации",
+        "требования о компенсации",
+        "подать иск",
+        "подать требование"
+      ]
+    },
+    "sv": {
+      "link": "https://www.lennuabi.com/sv/submit-claim/",
+      "translations": [
+        "kräva",
+        "ansökan",
+        "kräva",
+        "krav",
+        "ersättningskrav",
+        "anspråk",
+        "anmäla en skada",
+        "lämna in ett krav"
+      ]
+    }
+  }
+}

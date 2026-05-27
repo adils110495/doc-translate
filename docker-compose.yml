@@ -17,6 +17,11 @@ services:
       - ./api:/var/www/html/api
       - ./assets:/var/www/html/assets
       - ./index.php:/var/www/html/index.php
+      - ./link-editor.php:/var/www/html/link-editor.php
+      - ./fixed-words.json:/var/www/html/fixed-words.json
+      - ./fixed-words-links.json:/var/www/html/fixed-words-links.json
+      - ./translation-links.json:/var/www/html/translation-links.json
+      - ./custom-link-mapper.json:/var/www/html/custom-link-mapper.json
     environment:
       - APACHE_RUN_USER=www-data
       - APACHE_RUN_GROUP=www-data

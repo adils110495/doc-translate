@@ -102,6 +102,11 @@
         <div class="right-panel">
             <div class="panel-header">
                 <h2>Upload & Translate</h2>
+                <div class="header-actions">
+                    <a href="link-editor.php" class="icon-btn" title="Link Editor">
+                        <i class="fas fa-link"></i>
+                    </a>
+                </div>
             </div>
 
             <form id="translation-form" enctype="multipart/form-data">
