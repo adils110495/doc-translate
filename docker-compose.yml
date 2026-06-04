@@ -18,6 +18,7 @@ services:
       - ./assets:/var/www/html/assets
       - ./index.php:/var/www/html/index.php
       - ./link-editor.php:/var/www/html/link-editor.php
+      - ./currency-fix.php:/var/www/html/currency-fix.php
       - ./fixed-words.json:/var/www/html/fixed-words.json
       - ./fixed-words-links.json:/var/www/html/fixed-words-links.json
       - ./translation-links.json:/var/www/html/translation-links.json

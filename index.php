@@ -27,6 +27,9 @@
                     <button class="log-btn icon-btn" onclick="toggleLogViewer()" title="View Logs">
                         <i class="fas fa-file-alt"></i>
                     </button>
+                    <a href="currency-fix.php" class="icon-btn" title="Currency Symbol Fixer" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;color:inherit;">
+                        <i class="fas fa-euro-sign"></i>
+                    </a>
                 </div>
             </div>
 
