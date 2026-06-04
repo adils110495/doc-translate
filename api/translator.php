@@ -554,6 +554,8 @@ class DocumentTranslator {
             . '|EUR'        // Code
             . '|eiro'       // Latvian
             . '|evra'       // Serbian/Croatian (Latin)
+            . '|يورو'       // Arabic
+            . '|欧'         // Chinese (short form)
             . ')';
         $amountPattern = '(\{[a-zA-Z_]+\}|\d+(?:[.,\s]\d+)*)';
 

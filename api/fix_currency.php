@@ -12,7 +12,7 @@ if ($text === '') {
 
 echo json_encode(['result' => fixEuroSymbolPosition($text)]);
 
-function fixEuroSymbolPosition($text) {
+function fixEuroSymbolPosition(string $text): string {
     $text = str_replace(["\u{201C}", "\u{201D}", "\u{201E}", "\u{201F}"], '', $text);
     $euroVariants = '(?:'
         . '[Aa]vroya'
@@ -37,6 +37,8 @@ function fixEuroSymbolPosition($text) {
         . '|EUR'
         . '|eiro'
         . '|evra'
+        . '|يورو'
+        . '|欧'
         . ')';
     $amountPattern = '(\{[a-zA-Z_]+\}|\d+(?:[.,\s]\d+)*)';
 
