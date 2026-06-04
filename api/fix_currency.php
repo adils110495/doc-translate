@@ -43,5 +43,9 @@ function fixEuroSymbolPosition($text) {
     $text = preg_replace('/' . $amountPattern . '\s*' . $euroVariants . '\b/u', '€$1', $text);
     $text = preg_replace('/' . $amountPattern . '\s*€/u', '€$1', $text);
 
+    // "$" and "£" always before amount: "100$" / "100 $" → "$100"
+    $text = preg_replace('/' . $amountPattern . '\s*\$/u', '\$$1', $text);
+    $text = preg_replace('/' . $amountPattern . '\s*£/u', '£$1', $text);
+
     return $text;
 }
