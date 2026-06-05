@@ -568,9 +568,9 @@ class DocumentTranslator {
         $text = preg_replace('/' . $amountPattern . '\s*€/u', '€$1', $text);
 
         // CAD variants → "CAD amount"
-        $cadVariants = '(?:Kanada\s+dollar[ıi]|Canadian\s+dollars?|دولار\s+كندي|加元|CAD)';
+        $cadVariants = '(?:Kanada\s+dollar(?:ini|[ıi])|Canadian\s+dollars?|דולר\s+קנדי|دولار\s+كندي|加元|CAD)';
         // "amount variant" → "CAD amount"
-        $text = preg_replace('/' . $amountPattern . '\s*' . $cadVariants . '(?!\w)/ui', 'CAD $1', $text);
+        $text = preg_replace('/' . $amountPattern . '\s*' . $cadVariants . '(?![a-zA-Z])/ui', 'CAD $1', $text);
         // "variant amount" → "CAD amount" (for CJK/Arabic where symbol precedes amount)
         $text = preg_replace('/' . $cadVariants . '\s*' . $amountPattern . '/ui', 'CAD $1', $text);
 
