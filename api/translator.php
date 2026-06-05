@@ -553,6 +553,7 @@ class DocumentTranslator {
             . '|[Ee]uro'    // English/Latin
             . '|EUR'        // Code
             . '|eiro'       // Latvian
+            . '|euroon'     // Estonian illative
             . '|euroni'     // Albanian/Bosnian
             . '|evra'       // Serbian/Croatian (Latin)
             . '|يورو'       // Arabic
@@ -568,8 +569,10 @@ class DocumentTranslator {
 
         // CAD variants → "CAD amount"
         $cadVariants = '(?:Kanada\s+dollar[ıi]|Canadian\s+dollars?|دولار\s+كندي|加元|CAD)';
+        // "amount variant" → "CAD amount"
         $text = preg_replace('/' . $amountPattern . '\s*' . $cadVariants . '(?!\w)/ui', 'CAD $1', $text);
-        $text = preg_replace('/\bCAD\s+(' . substr($amountPattern, 1, -1) . ')/u', 'CAD $1', $text);
+        // "variant amount" → "CAD amount" (for CJK/Arabic where symbol precedes amount)
+        $text = preg_replace('/' . $cadVariants . '\s*' . $amountPattern . '/ui', 'CAD $1', $text);
 
         return $text;
     }
