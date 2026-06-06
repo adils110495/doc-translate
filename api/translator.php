@@ -562,7 +562,7 @@ class DocumentTranslator {
         $amountPattern = '(\{[a-zA-Z_]+\}|\d+(?:[.,\s]\d+)*)';
 
         // Only replace when paired with an amount: "amount <euro-variant>" → "€amount"
-        $text = preg_replace('/' . $amountPattern . '\s*' . $euroVariants . '\b/u', '€$1', $text);
+        $text = preg_replace('/' . $amountPattern . '\s*' . $euroVariants . '(?![a-zA-Z])/u', '€$1', $text);
 
         // "amount €" → "€amount"
         $text = preg_replace('/' . $amountPattern . '\s*€/u', '€$1', $text);
