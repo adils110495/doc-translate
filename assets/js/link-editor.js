@@ -1,10 +1,14 @@
-let customLinkMapper  = null;
-let debounceTimer     = null;
-let cleanSpansEnabled = false;
-let quillLeft         = null;
-let quillRight        = null;
-let resolvedOverrides = {};
-let pendingConflicts  = {};
+let customLinkMapper      = null;
+let debounceTimer         = null;
+let cleanSpansEnabled     = false;
+let quillLeft             = null;
+let quillRight            = null;
+let quillSource           = null;
+let sourceModeActive      = false;
+let resolvedOverrides     = {};
+let pendingConflicts      = {};
+let sourceParaData        = null; // [{idx, tag, preview, links:[{href,text}]}]
+let languageManuallySet   = false; // true once user explicitly picks a language from the dropdown
 
 const LINK_EDITOR_LANGUAGES = [
     { code: 'en',    name: 'English'              },
@@ -71,6 +75,13 @@ $(document).ready(function () {
         placeholder: 'Link preview will appear here…',
     });
 
+    // Source editor — paste source HTML with links for paragraph analysis
+    quillSource = new Quill('#editor-source', {
+        theme: 'snow',
+        modules: { toolbar: QUILL_TOOLBAR, clipboard: { matchVisual: false } },
+        placeholder: 'Paste source HTML content that already has links…',
+    });
+
     // Populate language dropdown
     const $sel = $('#editor-language');
     LINK_EDITOR_LANGUAGES.forEach(({ code, name }) => {
@@ -78,8 +89,8 @@ $(document).ready(function () {
         $sel.append(`<option value="${code}">${name}${flag}</option>`);
     });
 
-    // Fetch mapper data fresh from server (avoids PHP opcache/encoding issues)
-    $.getJSON('api/get_mapper_data.php', function (res) {
+    // Fetch mapper data fresh from server — cache-busted so JSON changes are picked up immediately
+    $.getJSON('api/get_mapper_data.php?_=' + Date.now(), function (res) {
         window.DEFAULT_LINK_MAPPER = res.default || null;
 
         if (res.custom) {
@@ -99,7 +110,10 @@ $(document).ready(function () {
         }, 400);
     });
 
-    $('#editor-language').on('change', updatePreview);
+    $('#editor-language').on('change', function () {
+        languageManuallySet = true;
+        updatePreview();
+    });
 
     $('#base-file-input').on('change', function () {
         const file = this.files[0];
@@ -111,6 +125,8 @@ $(document).ready(function () {
 // Language auto-detection
 
 function autoDetectLanguage() {
+    if (languageManuallySet) return; // respect user's explicit choice
+
     const text = quillLeft.getText().trim();
     if (text.length < 15) return; // too short to be reliable
 
@@ -165,8 +181,16 @@ function detectLang(text) {
         return 'fi';
     }
 
-    // Dutch: common words (shares basic Latin with English)
     const lc = text.toLowerCase();
+
+    // Danish: words that are distinctive even without special Scandinavian characters.
+    // "gik" is uniquely Danish past tense (Norwegian writes "gikk" with double k).
+    // Aviation-context words like "glip", "misset", "forsinkelse" are strong signals.
+    if (/\bgik\b/.test(lc)) return 'da';
+    const daPlainScore = (lc.match(/\b(glip|misset|forsinkelse|erstatning|flyselskab|kompensation|afgang|ankomst|flyvning)\b/g) || []).length;
+    if (daPlainScore >= 1) return 'da';
+
+    // Dutch: common words (shares basic Latin with English)
     const nlScore = (lc.match(/\b(van|de|het|een|vlucht|vluchten|vertraging|annulering)\b/g) || []).length;
     if (nlScore >= 2) return 'nl';
 
@@ -185,6 +209,21 @@ function updatePreview() {
         return;
     }
 
+    // ── Source-content mode: bypass API, apply source links only ──────────────
+    // This guarantees the output has the exact same link count and paragraph
+    // positions as the source content.
+    if (sourceParaData && sourceParaData.some(p => p.links.length > 0)) {
+        setRightLoading(true);
+        const rawHtml    = applySourceLinksToTarget(content, sourceParaData, language);
+        const linkCount  = countLinksInHtml(rawHtml);
+        $('#editor-right').data('raw-html', rawHtml);
+        renderPreview(rawHtml);
+        updateBadge(linkCount);
+        setRightLoading(false);
+        return;
+    }
+
+    // ── Normal mode: use server-side link mapper ───────────────────────────────
     setRightLoading(true);
 
     $.ajax({
@@ -208,8 +247,18 @@ function updatePreview() {
     });
 }
 
+function countLinksInHtml(html) {
+    const d = document.createElement('div');
+    d.innerHTML = html;
+    return d.querySelectorAll('a[href]').length;
+}
+
 function renderPreview(rawHtml) {
     const html = cleanSpansEnabled ? applyCleanSpans(rawHtml) : rawHtml;
+    // Set innerHTML directly — dangerouslyPasteHTML triggers Quill's sanitizer
+    // which strips class attributes from <a> tags. Direct innerHTML assignment
+    // is then re-normalized by Quill's MutationObserver, but we handle the
+    // class-stripping via CSS a[href] fallback rule in style.css.
     quillRight.root.innerHTML = html || '';
 }
 
@@ -414,7 +463,8 @@ function toggleSource(side) {
 function clearEditor() {
     if (quillLeft.getText().trim() && !confirm('Clear editor content?')) return;
     quillLeft.setContents([{ insert: '\n' }]);
-    resolvedOverrides = {};
+    resolvedOverrides     = {};
+    languageManuallySet   = false; // re-enable auto-detect for the next paste
     updateCounts();
     showEmptyState();
 }
@@ -546,6 +596,361 @@ function escapeHtml(str) {
     const d = document.createElement('div');
     d.appendChild(document.createTextNode(str));
     return d.innerHTML;
+}
+
+// ---------------------------------------------------------------------------
+// Source Content Analysis
+
+function toggleSourceContent() {
+    const $panel  = $('#source-content-panel');
+    const opening = !$panel.is(':visible');
+    $panel.slideToggle(180);
+    $('#btn-show-source').toggleClass('active', opening);
+}
+
+function analyzeSource() {
+    // If currently in raw-HTML source mode, sync content back to Quill first
+    if (sourceModeActive) {
+        quillSource.root.innerHTML = $('#source-view-raw').val();
+    }
+
+    if (quillSource.getText().trim() === '') {
+        $('#source-analysis-output').html('<span class="source-analysis-hint">Nothing to analyze — paste source HTML first.</span>');
+        return;
+    }
+
+    const html = quillSource.root.innerHTML;
+    sourceParaData = parseSourceParagraphs(html);
+    renderSourceAnalysis(sourceParaData);
+    updateSourceBadge();
+
+    // Refresh preview so source links are applied to target immediately
+    if (quillLeft.getText().trim()) updatePreview();
+}
+
+function clearSource() {
+    sourceParaData = null;
+    quillSource.setContents([{ insert: '\n' }]);
+
+    // Exit raw-source mode if active
+    if (sourceModeActive) {
+        $('#source-view-raw').val('').hide();
+        $('#editor-source').show();
+        $('#btn-source-toggle').removeClass('active');
+        sourceModeActive = false;
+    }
+
+    $('#source-analysis-output').html(
+        '<span class="source-analysis-hint">Paste source HTML above and click <strong>Analyze Links</strong> to see which paragraphs contain links.</span>'
+    );
+    updateSourceBadge();
+    if (quillLeft.getText().trim()) updatePreview();
+}
+
+function toggleSourceView() {
+    const $quill = $('#editor-source');
+    const $raw   = $('#source-view-raw');
+    const $btn   = $('#btn-source-toggle');
+
+    if (sourceModeActive) {
+        // Raw HTML → WYSIWYG
+        quillSource.root.innerHTML = $raw.val();
+        $raw.hide();
+        $quill.show();
+        $btn.removeClass('active');
+        sourceModeActive = false;
+    } else {
+        // WYSIWYG → Raw HTML
+        $raw.val(quillSource.root.innerHTML);
+        $quill.hide();
+        $raw.show();
+        $btn.addClass('active');
+        sourceModeActive = true;
+    }
+}
+
+// Parse HTML into flat list of block elements with their links
+function parseSourceParagraphs(html) {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+
+    const blocks = div.querySelectorAll('p, li, h1, h2, h3, h4, h5, h6, blockquote, td, th');
+
+    return Array.from(blocks).map((block, idx) => {
+        const links = Array.from(block.querySelectorAll('a[href]'))
+            .map(a => ({ href: a.getAttribute('href') || '', text: a.textContent.trim() }))
+            .filter(l => l.href && l.text);
+
+        return {
+            idx,
+            tag: block.tagName.toLowerCase(),
+            preview: block.textContent.trim().substring(0, 70),
+            links,
+        };
+    });
+}
+
+function renderSourceAnalysis(paras) {
+    const withLinks = paras.filter(p => p.links.length > 0);
+    const total     = withLinks.reduce((n, p) => n + p.links.length, 0);
+
+    if (total === 0) {
+        $('#source-analysis-output').html('<span class="source-analysis-hint">No &lt;a href&gt; links found in the pasted source HTML.</span>');
+        return;
+    }
+
+    const mapper  = customLinkMapper || window.DEFAULT_LINK_MAPPER || {};
+    const $output = $('#source-analysis-output').empty();
+
+    $output.append(
+        `<div class="source-analysis-summary">Found <strong>${total}</strong> link${total !== 1 ? 's' : ''} across <strong>${withLinks.length}</strong> paragraph${withLinks.length !== 1 ? 's' : ''} — matched paragraphs will be applied to the target when you click Refresh.</div>`
+    );
+
+    const $list = $('<div class="source-para-list">');
+
+    withLinks.forEach(({ idx, tag, preview, links }) => {
+        const $item = $('<div class="source-para-item">');
+        const label = (tag === 'p' ? 'P' : tag.toUpperCase()) + (idx + 1);
+        $item.append(`<span class="source-para-num" title="&lt;${tag}&gt; element #${idx + 1}">${escapeHtml(label)}</span>`);
+
+        const $linkCol = $('<div class="source-para-links">');
+
+        if (preview) {
+            $linkCol.append(`<span class="source-para-preview">${escapeHtml(preview.substring(0, 55))}…</span>`);
+        }
+
+        links.forEach(({ href, text }) => {
+            const match   = findMapperTermForHref(href, mapper);
+            const tagHtml = match
+                ? `<span class="source-link-tag matched" title="Mapper term: '${escapeHtml(match.term)}'"><i class="fas fa-check"></i> ${escapeHtml(match.term)}</span>`
+                : `<span class="source-link-tag custom" title="URL not found in active link mapper — will be skipped"><i class="fas fa-triangle-exclamation"></i> custom</span>`;
+
+            $linkCol.append(`
+                <div class="source-link-item">
+                    <span class="source-link-anchor" title="${escapeHtml(text)}">"${escapeHtml(text)}"</span>
+                    <span class="source-link-arrow">→</span>
+                    <span class="source-link-url" title="${escapeHtml(href)}">${escapeHtml(href)}</span>
+                    ${tagHtml}
+                </div>`);
+        });
+
+        $item.append($linkCol);
+        $list.append($item);
+    });
+
+    $output.append($list);
+    $('#source-links-count').text(`${total} link${total !== 1 ? 's' : ''} found`);
+}
+
+function updateSourceBadge() {
+    const total = sourceParaData
+        ? sourceParaData.reduce((n, p) => n + p.links.length, 0)
+        : 0;
+
+    if (total > 0) {
+        $('#source-badge-mini').text(total).show();
+        $('#btn-show-source').addClass('has-source');
+        $('#source-links-count').text(`${total} link${total !== 1 ? 's' : ''} found`);
+    } else {
+        $('#source-badge-mini').hide();
+        $('#btn-show-source').removeClass('has-source');
+        $('#source-links-count').text('');
+    }
+}
+
+// Search mapper for a matching href (any language entry)
+function findMapperTermForHref(href, mapper) {
+    if (!mapper || !href) return null;
+    for (const [term, langEntries] of Object.entries(mapper)) {
+        if (!langEntries || typeof langEntries !== 'object') continue;
+        for (const [lang, entry] of Object.entries(langEntries)) {
+            if (entry && entry.link === href) return { term, lang };
+        }
+    }
+    return null;
+}
+
+// ---------------------------------------------------------------------------
+// Source link transplant — paragraph-aligned, exact count
+//
+// Strategy:
+//   - Source paragraph at index N had K links → apply exactly those K links to
+//     target paragraph at index N only (no cross-paragraph fallback).
+//   - Each link searches for its translated phrases (longest first) within the
+//     target paragraph. The first non-overlapping match wins.
+//   - If the phrase isn't found in that paragraph it is simply skipped.
+//   - Links that have no mapper entry (shown as "custom" in the analysis panel)
+//     are also skipped.
+//
+// Unicode: both the block text and phrases are NFC-normalised before comparison
+// so that characters like å work regardless of how the pasted HTML was encoded.
+
+function applySourceLinksToTarget(targetHtml, sourceParagraphs, language) {
+    const mapper = customLinkMapper || window.DEFAULT_LINK_MAPPER;
+    if (!mapper) return targetHtml;
+
+    // paraIdx → [{url, phrases[]}]  one entry per source link, in source order
+    const paraLinkLists = {};
+
+    sourceParagraphs.forEach(({ idx, links }) => {
+        if (!links.length) return;
+        const list = [];
+
+        links.forEach(({ href }) => {
+            const match = findMapperTermForHref(href, mapper);
+            if (!match) return;
+
+            const termData    = mapper[match.term];
+            const targetEntry = termData && termData[language];
+            if (!targetEntry || !Array.isArray(targetEntry.translations)) return;
+
+            const url     = targetEntry.link || href;
+            // Longest phrase first; NFC-normalise for consistent Unicode matching
+            const phrases = targetEntry.translations
+                .slice()
+                .sort((a, b) => b.length - a.length)
+                .map(p => p.toLowerCase().normalize('NFC'));
+
+            list.push({ url, phrases });
+        });
+
+        if (list.length) paraLinkLists[idx] = list;
+    });
+
+    if (!Object.keys(paraLinkLists).length) return targetHtml;
+
+    const div     = document.createElement('div');
+    div.innerHTML = targetHtml;
+
+    const blockArray = Array.from(
+        div.querySelectorAll('p, li, h1, h2, h3, h4, h5, h6, blockquote, td, th')
+    );
+
+    Object.entries(paraLinkLists).forEach(([idxStr, linkList]) => {
+        const idx   = parseInt(idxStr, 10);
+        const block = blockArray[idx];
+        if (!block) return; // target has fewer blocks than source — skip
+
+        // NFC-normalise the block text so accented chars always compare correctly
+        const blockText = collectTextContent(block);
+        const lc        = blockText.toLowerCase().normalize('NFC');
+        const usedUrls  = new Set();
+
+        const matches = [];
+
+        linkList.forEach(({ url, phrases }) => {
+            if (usedUrls.has(url)) return;
+
+            // Try phrases from longest to shortest; break only on a successful add.
+            // If the longest phrase overlaps an already-claimed range we fall through
+            // to the next shorter phrase instead of giving up immediately.
+            for (const phrase of phrases) {
+                const pos = lc.indexOf(phrase);
+                if (pos === -1) continue; // phrase not in this block — try shorter
+
+                const overlaps = matches.some(
+                    m => pos < m.end && pos + phrase.length > m.start
+                );
+                if (overlaps) continue; // overlaps existing match — try shorter phrase
+
+                matches.push({ start: pos, end: pos + phrase.length, url });
+                usedUrls.add(url);
+                break; // phrase placed — move to next link
+            }
+        });
+
+        if (!matches.length) return;
+
+        matches.sort((a, b) => a.start - b.start);
+        injectLinksIntoBlock(block, matches, blockText);
+    });
+
+    return div.innerHTML;
+}
+
+// Returns the concatenated text of all text nodes that are NOT inside existing <a> tags,
+// which is the same text we'll walk when injecting links.
+function collectTextContent(block) {
+    const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+            let el = node.parentElement;
+            while (el && el !== block) {
+                if (el.tagName === 'A') return NodeFilter.FILTER_REJECT;
+                el = el.parentElement;
+            }
+            return NodeFilter.FILTER_ACCEPT;
+        },
+    });
+    let text = '', cur;
+    while ((cur = walker.nextNode())) text += cur.textContent;
+    return text;
+}
+
+// Walk text nodes (skipping existing <a> tags), collect them with cumulative offsets,
+// then inject <a> elements at the positions described by `matches`.
+function injectLinksIntoBlock(block, matches, fullText) {
+    // Collect text nodes with their start offset in fullText
+    const nodeRanges = [];
+    let offset = 0;
+
+    const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+            let el = node.parentElement;
+            while (el && el !== block) {
+                if (el.tagName === 'A') return NodeFilter.FILTER_REJECT;
+                el = el.parentElement;
+            }
+            return NodeFilter.FILTER_ACCEPT;
+        },
+    });
+
+    let cur;
+    while ((cur = walker.nextNode())) {
+        nodeRanges.push({ node: cur, start: offset, end: offset + cur.textContent.length });
+        offset += cur.textContent.length;
+    }
+
+    // Map each match to a text node and local offset
+    // Group by node so we can process each node's matches together
+    const nodeMatchMap = new Map(); // textNode → [{localStart, localEnd, url}]
+
+    matches.forEach(({ start, end, url }) => {
+        // Find the node that fully contains this match
+        const nr = nodeRanges.find(r => r.start <= start && r.end >= end);
+        if (!nr) return;
+
+        if (!nodeMatchMap.has(nr.node)) nodeMatchMap.set(nr.node, []);
+        nodeMatchMap.get(nr.node).push({
+            localStart: start - nr.start,
+            localEnd:   end   - nr.start,
+            url,
+        });
+    });
+
+    // Replace each affected text node with a fragment containing <a> tags
+    nodeMatchMap.forEach((nodeMatches, textNode) => {
+        nodeMatches.sort((a, b) => a.localStart - b.localStart);
+
+        const text = textNode.textContent;
+        const frag = document.createDocumentFragment();
+        let last = 0;
+
+        nodeMatches.forEach(({ localStart, localEnd, url }) => {
+            if (localStart < last) return; // overlapping — skip
+            if (localStart > last) frag.appendChild(document.createTextNode(text.slice(last, localStart)));
+
+            const a = document.createElement('a');
+            a.href      = url;
+            a.target    = '_blank';
+            a.className = 'detected-link';
+            a.textContent = text.slice(localStart, localEnd);
+            frag.appendChild(a);
+            last = localEnd;
+        });
+
+        if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+        textNode.parentNode.replaceChild(frag, textNode);
+    });
 }
 
 // ---------------------------------------------------------------------------

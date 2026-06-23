@@ -157,19 +157,25 @@ function applyLinksToLine(string $line, array $termToUrl, int &$linksFound, arra
     $patterns = array_map(fn($p) => preg_quote($p, '/'), array_keys($termToUrl));
     $pattern  = '/(' . implode('|', $patterns) . ')/iu';
 
+    // Use PREG_OFFSET_CAPTURE with the u-flag: PHP returns BYTE offsets even for Unicode
+    // patterns, so we convert to character offsets to avoid skipping matches that follow
+    // multibyte characters (e.g. "glip" after the å in "gået").
     if (!preg_match_all($pattern, $line, $matches, PREG_OFFSET_CAPTURE)) {
         return htmlspecialchars($line);
     }
 
     $result  = '';
-    $lastEnd = 0;
+    $lastEnd = 0; // character offset
 
     foreach ($matches[0] as $match) {
-        [$matchText, $matchPos] = $match;
-        if ($matchPos < $lastEnd) continue;
-        $matchEnd = $matchPos + strlen($matchText);
+        [$matchText, $bytePos] = $match;
+        // Convert byte offset → character offset
+        $matchPos = mb_strlen(substr($line, 0, $bytePos), 'UTF-8');
+        $matchLen = mb_strlen($matchText, 'UTF-8');
 
-        $result .= htmlspecialchars(substr($line, $lastEnd, $matchPos - $lastEnd));
+        if ($matchPos < $lastEnd) continue;
+
+        $result .= htmlspecialchars(mb_substr($line, $lastEnd, $matchPos - $lastEnd, 'UTF-8'));
 
         $key = mb_strtolower($matchText, 'UTF-8');
         if (isset($termToUrl[$key])) {
@@ -182,8 +188,8 @@ function applyLinksToLine(string $line, array $termToUrl, int &$linksFound, arra
             $result .= htmlspecialchars($matchText);
         }
 
-        $lastEnd = $matchEnd;
+        $lastEnd = $matchPos + $matchLen;
     }
 
-    return $result . htmlspecialchars(substr($line, $lastEnd));
+    return $result . htmlspecialchars(mb_substr($line, $lastEnd, null, 'UTF-8'));
 }

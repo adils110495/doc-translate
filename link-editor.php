@@ -1,12 +1,23 @@
-<!DOCTYPE html>
+<?php
+header('Cache-Control: no-cache, no-store, must-revalidate');
+header('Pragma: no-cache');
+header('Expires: 0');
+$cssV = filemtime(__DIR__ . '/assets/css/style.css');
+$jsV  = filemtime(__DIR__ . '/assets/js/link-editor.js');
+?><!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Link Editor – Document Translation</title>
-    <link rel="stylesheet" href="assets/css/style.css?v=<?php echo filemtime(__DIR__ . '/assets/css/style.css'); ?>">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?php echo $cssV; ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+    <style>
+        /* Force overrides — bypasses any cached external CSS */
+        .source-input-wrap { flex: 0 0 50% !important; width: 50% !important; }
+        .source-analysis-output { flex: 1 1 0 !important; min-width: 0 !important; }
+    </style>
 </head>
 <body>
 
@@ -47,6 +58,10 @@
                 </button>
                 <button class="btn-bar-action" id="btn-show-sample" onclick="toggleSample()">
                     <i class="fas fa-lightbulb"></i> Sample
+                </button>
+                <button class="btn-bar-action" id="btn-show-source" onclick="toggleSourceContent()" title="Paste source HTML to analyze paragraph-level links">
+                    <i class="fas fa-file-import"></i> Source Content
+                    <span class="source-badge-mini" id="source-badge-mini" style="display:none"></span>
                 </button>
                 <button id="btn-clear-mapper" class="icon-btn btn-danger-icon" onclick="clearBaseFile()" title="Reset to default" style="display:none">
                     <i class="fas fa-times"></i>
@@ -95,6 +110,37 @@
                 </div>
             </div>
             <pre class="sample-code current-json-pre" id="current-json-pre"></pre>
+        </div>
+
+        <!-- Source Content Panel (collapsible) -->
+        <div id="source-content-panel" class="source-content-panel" style="display:none">
+            <div class="source-panel-header">
+                <div class="source-panel-title">
+                    <i class="fas fa-file-import"></i>
+                    <span>Paste source HTML (with links) — analyze paragraph anchors, then apply to target in left editor</span>
+                </div>
+                <span class="source-links-count" id="source-links-count"></span>
+            </div>
+            <div class="source-panel-body">
+                <div class="source-input-wrap">
+                    <div id="editor-source" class="quill-pane source-quill-pane"></div>
+                    <textarea id="source-view-raw" class="source-view source-view-raw" style="display:none"></textarea>
+                    <div class="source-input-actions">
+                        <button class="btn-apply-json btn-analyze-source" onclick="analyzeSource()">
+                            <i class="fas fa-magnifying-glass"></i> Analyze Links
+                        </button>
+                        <button class="icon-btn" id="btn-source-toggle" onclick="toggleSourceView()" title="Toggle HTML source view">
+                            <i class="fas fa-code"></i>
+                        </button>
+                        <button class="btn-apply-json" onclick="clearSource()">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
+                    </div>
+                </div>
+                <div class="source-analysis-output" id="source-analysis-output">
+                    <span class="source-analysis-hint">Paste source HTML above and click <strong>Analyze Links</strong> to see which paragraphs contain links and whether they match the active link mapper.</span>
+                </div>
+            </div>
         </div>
 
         <!-- Sample JSON (collapsible) -->
@@ -246,6 +292,6 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
-<script src="assets/js/link-editor.js?v=<?php echo filemtime(__DIR__ . '/assets/js/link-editor.js'); ?>"></script>
+<script src="assets/js/link-editor.js?v=<?php echo $jsV; ?>"></script>
 </body>
 </html>
