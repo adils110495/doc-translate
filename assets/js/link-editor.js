@@ -253,6 +253,8 @@ function updatePreview() {
 
         // Helper: apply a PHP-returned block HTML into the live div, trimming
         // extra link occurrences to match source count + position.
+        // IMPORTANT: we track the ORIGINAL block node so Phase-2 candidates
+        // can correctly detect "already used" blocks via usedBlocks.has(originalNode).
         const usedBlocks = new Set();
         function applyBlockHtml(block, html, hrefToSrcPositions) {
             const filtered = filterLinksByPosition(html, hrefToSrcPositions);
@@ -261,8 +263,8 @@ function updatePreview() {
             const newBlock = wrap.firstElementChild;
             if (newBlock && block.parentNode) {
                 block.parentNode.replaceChild(newBlock, block);
-                usedBlocks.add(newBlock); // track the replacement node
             }
+            usedBlocks.add(block); // always mark original as used (even if DOM swap failed)
         }
 
         // PHP call helper returning { html, linksFound }
@@ -294,15 +296,23 @@ function updatePreview() {
                 }
             });
 
-            // Phase 2 — sequential fallback: try blocks at ±1…±5 from source idx
-            const OFFSETS = [-1, 1, -2, 2, -3, 3, -4, 4, -5, 5];
+            // Phase 2 — sequential fallback.
+            // First try ±1…±8 (nearby), then if still no match try ALL remaining
+            // blocks in document order (last resort for heavily restructured translations).
+            function nearbyOffsets(idx) {
+                const offs = [];
+                for (let d = 1; d <= 8; d++) { offs.push(-d, d); }
+                return offs.map(o => blockArray[idx + o]);
+            }
 
             function runFallback(i) {
                 if (i >= needFallback.length) { finalize(); return; }
                 const task = needFallback[i];
 
-                const candidates = OFFSETS
-                    .map(off => blockArray[task.idx + off])
+                // Candidates: nearby first, then all remaining (deduped)
+                const nearby  = nearbyOffsets(task.idx);
+                const allRest = blockArray.filter(b => !nearby.includes(b));
+                const candidates = [...nearby, ...allRest]
                     .filter(b => b && !/^h[1-6]$/i.test(b.tagName) && !usedBlocks.has(b));
 
                 function tryCandidates(ci) {
@@ -943,13 +953,26 @@ function updateSourceBadge() {
     }
 }
 
-// Search mapper for a matching href (any language entry)
+// Normalise a URL for comparison: strip trailing slashes, lower-case the origin.
+// This handles http vs https and www-prefix differences and trailing-slash mismatches.
+function normaliseHref(url) {
+    try {
+        const u = new URL(url);
+        return (u.hostname + u.pathname).toLowerCase().replace(/\/+$/, '');
+    } catch {
+        return url.toLowerCase().replace(/\/+$/, '');
+    }
+}
+
+// Search mapper for a matching href (any language entry).
+// Uses normalised comparison so trailing-slash / case differences don't break it.
 function findMapperTermForHref(href, mapper) {
     if (!mapper || !href) return null;
+    const norm = normaliseHref(href);
     for (const [term, langEntries] of Object.entries(mapper)) {
         if (!langEntries || typeof langEntries !== 'object') continue;
         for (const [lang, entry] of Object.entries(langEntries)) {
-            if (entry && entry.link === href) return { term, lang };
+            if (entry && normaliseHref(entry.link || '') === norm) return { term, lang };
         }
     }
     return null;
