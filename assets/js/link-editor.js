@@ -209,49 +209,70 @@ function updatePreview() {
         return;
     }
 
-    // ── Source-content mode: apply only source-matched terms via PHP API ────────
-    // Builds a restricted mapper (only terms from source links, target language
-    // only) then calls apply_links.php — same Unicode-safe path as normal mode.
-    // Links are never injected into headings.
+    // ── Source-content mode: strict paragraph-level link matching ────────────────
+    // Source paragraph N has links → apply ONLY those translated links to target
+    // paragraph N. No bleed into other blocks. Headings never receive links.
     if (sourceParaData && sourceParaData.some(p => p.links.length > 0)) {
         const mapper = customLinkMapper || window.DEFAULT_LINK_MAPPER;
         if (!mapper) return;
 
-        const sourceMapper = {};
-        sourceParaData.forEach(({ links }) => {
+        // Parse target HTML into editable DOM
+        const div = document.createElement('div');
+        div.innerHTML = content;
+        const blockArray = Array.from(
+            div.querySelectorAll('p, li, h1, h2, h3, h4, h5, h6, blockquote, td, th')
+        );
+
+        // One task per source paragraph — only its specific links, only its target block
+        const tasks = [];
+        sourceParaData.forEach(({ idx, links }) => {
+            if (!links.length) return;
+            const block = blockArray[idx];
+            if (!block) return;                           // target has fewer blocks
+            if (/^h[1-6]$/i.test(block.tagName)) return; // skip headings
+
+            const paraMapper = {};
             links.forEach(({ href }) => {
-                const match = findMapperTermForHref(href, mapper);
+                const match       = findMapperTermForHref(href, mapper);
                 if (!match) return;
-                const termData    = mapper[match.term];
-                const targetEntry = termData && termData[language];
+                const targetEntry = (mapper[match.term] || {})[language];
                 if (!targetEntry || !Array.isArray(targetEntry.translations)) return;
-                if (!sourceMapper[match.term]) sourceMapper[match.term] = {};
-                if (!sourceMapper[match.term][language]) {
-                    sourceMapper[match.term][language] = targetEntry;
-                }
+                if (!paraMapper[match.term]) paraMapper[match.term] = {};
+                paraMapper[match.term][language] = targetEntry;
             });
+
+            if (Object.keys(paraMapper).length) tasks.push({ idx, block, paraMapper });
         });
 
-        if (!Object.keys(sourceMapper).length) return;
+        if (!tasks.length) return;
 
         setRightLoading(true);
-        $.ajax({
-            url: 'api/apply_links.php',
-            method: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({ content, language, link_mapper: sourceMapper }),
-            success(res) {
-                let rawHtml = res.html || '';
-                rawHtml = removeHeadingLinks(rawHtml);
-                $('#editor-right').data('raw-html', rawHtml);
-                renderPreview(rawHtml);
-                updateBadge(countLinksInHtml(rawHtml));
-            },
-            error() {
-                quillRight.root.innerHTML = '<p><em style="color:#e74c3c">Failed to apply links.</em></p>';
-            },
-            complete() { setRightLoading(false); },
-        });
+
+        Promise.all(tasks.map(({ idx, block, paraMapper }) =>
+            Promise.resolve($.ajax({
+                url: 'api/apply_links.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ content: block.outerHTML, language, link_mapper: paraMapper }),
+            }))
+            .then(res  => ({ idx, html: res.html || '' }))
+            .catch(()  => ({ idx, html: '' }))
+        )).then(results => {
+            results.forEach(({ idx, html }) => {
+                if (!html) return;
+                const block = blockArray[idx];
+                if (!block || !block.parentNode) return;
+                const wrap = document.createElement('div');
+                wrap.innerHTML = html;
+                const newBlock = wrap.firstElementChild;
+                if (newBlock) block.parentNode.replaceChild(newBlock, block);
+            });
+            const rawHtml = div.innerHTML;
+            $('#editor-right').data('raw-html', rawHtml);
+            renderPreview(rawHtml);
+            updateBadge(countLinksInHtml(rawHtml));
+            setRightLoading(false);
+        }, () => setRightLoading(false));
         return;
     }
 
