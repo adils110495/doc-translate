@@ -209,30 +209,30 @@ function updatePreview() {
         return;
     }
 
-    // ── Source-content mode: strict paragraph-level link matching ────────────────
-    // Source paragraph N has links → apply ONLY those translated links to target
-    // paragraph N. No bleed into other blocks. Headings never receive links.
+    // ── Source-content mode: paragraph-level link matching with fallback ─────────
+    // Phase 1 — try the exact same block index as the source paragraph.
+    // Phase 2 — if Phase 1 got 0 links (phrase not in that block), try blocks at
+    //           ±1 … ±5 until PHP finds a match.  Prevents missed links when
+    //           translated articles shift paragraph positions slightly.
+    // Headings never receive links.
     if (sourceParaData && sourceParaData.some(p => p.links.length > 0)) {
         const mapper = customLinkMapper || window.DEFAULT_LINK_MAPPER;
         if (!mapper) return;
 
-        // Parse target HTML into editable DOM
         const div = document.createElement('div');
         div.innerHTML = content;
         const blockArray = Array.from(
             div.querySelectorAll('p, li, h1, h2, h3, h4, h5, h6, blockquote, td, th')
         );
 
-        // One task per source paragraph — only its specific links, only its target block
         const tasks = [];
         sourceParaData.forEach(({ idx, links }) => {
             if (!links.length) return;
             const block = blockArray[idx];
-            if (!block) return;                           // target has fewer blocks
-            if (/^h[1-6]$/i.test(block.tagName)) return; // skip headings
+            if (!block || /^h[1-6]$/i.test(block.tagName)) return;
 
             const paraMapper = {};
-            const hrefToSrcPositions = {}; // targetUrl → [srcRelPos, ...]
+            const hrefToSrcPositions = {};
 
             links.forEach(({ href, relPos: srcRelPos }) => {
                 const match       = findMapperTermForHref(href, mapper);
@@ -241,46 +241,95 @@ function updatePreview() {
                 if (!targetEntry || !Array.isArray(targetEntry.translations)) return;
                 if (!paraMapper[match.term]) paraMapper[match.term] = {};
                 paraMapper[match.term][language] = targetEntry;
-
                 const targetUrl = targetEntry.link || href;
                 if (!hrefToSrcPositions[targetUrl]) hrefToSrcPositions[targetUrl] = [];
                 hrefToSrcPositions[targetUrl].push(srcRelPos);
             });
 
-            if (Object.keys(paraMapper).length) tasks.push({ idx, block, paraMapper, hrefToSrcPositions });
+            if (Object.keys(paraMapper).length) tasks.push({ idx, paraMapper, hrefToSrcPositions });
         });
 
         if (!tasks.length) return;
 
-        setRightLoading(true);
+        // Helper: apply a PHP-returned block HTML into the live div, trimming
+        // extra link occurrences to match source count + position.
+        const usedBlocks = new Set();
+        function applyBlockHtml(block, html, hrefToSrcPositions) {
+            const filtered = filterLinksByPosition(html, hrefToSrcPositions);
+            const wrap = document.createElement('div');
+            wrap.innerHTML = filtered;
+            const newBlock = wrap.firstElementChild;
+            if (newBlock && block.parentNode) {
+                block.parentNode.replaceChild(newBlock, block);
+                usedBlocks.add(newBlock); // track the replacement node
+            }
+        }
 
-        Promise.all(tasks.map(({ idx, block, paraMapper, hrefToSrcPositions }) =>
-            Promise.resolve($.ajax({
+        // PHP call helper returning { html, linksFound }
+        function phpApply(blockEl, paraMapper) {
+            return Promise.resolve($.ajax({
                 url: 'api/apply_links.php',
                 method: 'POST',
                 contentType: 'application/json',
-                data: JSON.stringify({ content: block.outerHTML, language, link_mapper: paraMapper }),
-            }))
-            .then(res  => ({ idx, html: res.html || '', hrefToSrcPositions }))
-            .catch(()  => ({ idx, html: '', hrefToSrcPositions: {} }))
-        )).then(results => {
-            results.forEach(({ idx, html, hrefToSrcPositions }) => {
-                if (!html) return;
-                // Trim extra link occurrences to match source count and position
-                const filtered = filterLinksByPosition(html, hrefToSrcPositions);
-                const block = blockArray[idx];
-                if (!block || !block.parentNode) return;
-                const wrap = document.createElement('div');
-                wrap.innerHTML = filtered;
-                const newBlock = wrap.firstElementChild;
-                if (newBlock) block.parentNode.replaceChild(newBlock, block);
+                data: JSON.stringify({ content: blockEl.outerHTML, language, link_mapper: paraMapper }),
+            })).then(res => ({ html: res.html || '', linksFound: res.links_found || 0 }))
+               .catch(() => ({ html: '', linksFound: 0 }));
+        }
+
+        setRightLoading(true);
+
+        // Phase 1 — exact-index blocks, all in parallel
+        Promise.all(tasks.map(task =>
+            phpApply(blockArray[task.idx], task.paraMapper)
+            .then(res => ({ task, res }))
+        )).then(phase1Results => {
+            const needFallback = [];
+
+            phase1Results.forEach(({ task, res }) => {
+                const block = blockArray[task.idx];
+                if (res.linksFound > 0 && block && !usedBlocks.has(block)) {
+                    applyBlockHtml(block, res.html, task.hrefToSrcPositions);
+                } else {
+                    needFallback.push(task);
+                }
             });
-            const rawHtml = div.innerHTML;
-            $('#editor-right').data('raw-html', rawHtml);
-            renderPreview(rawHtml);
-            updateBadge(countLinksInHtml(rawHtml));
-            setRightLoading(false);
-        }, () => setRightLoading(false));
+
+            // Phase 2 — sequential fallback: try blocks at ±1…±5 from source idx
+            const OFFSETS = [-1, 1, -2, 2, -3, 3, -4, 4, -5, 5];
+
+            function runFallback(i) {
+                if (i >= needFallback.length) { finalize(); return; }
+                const task = needFallback[i];
+
+                const candidates = OFFSETS
+                    .map(off => blockArray[task.idx + off])
+                    .filter(b => b && !/^h[1-6]$/i.test(b.tagName) && !usedBlocks.has(b));
+
+                function tryCandidates(ci) {
+                    if (ci >= candidates.length) { runFallback(i + 1); return; }
+                    const block = candidates[ci];
+                    phpApply(block, task.paraMapper).then(res => {
+                        if (res.linksFound > 0) {
+                            applyBlockHtml(block, res.html, task.hrefToSrcPositions);
+                            runFallback(i + 1);
+                        } else {
+                            tryCandidates(ci + 1);
+                        }
+                    });
+                }
+                tryCandidates(0);
+            }
+
+            function finalize() {
+                const rawHtml = div.innerHTML;
+                $('#editor-right').data('raw-html', rawHtml);
+                renderPreview(rawHtml);
+                updateBadge(countLinksInHtml(rawHtml));
+                setRightLoading(false);
+            }
+
+            runFallback(0);
+        }).catch(() => setRightLoading(false));
         return;
     }
 
