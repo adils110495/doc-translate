@@ -232,38 +232,46 @@ function updatePreview() {
             if (/^h[1-6]$/i.test(block.tagName)) return; // skip headings
 
             const paraMapper = {};
-            links.forEach(({ href }) => {
+            const hrefToSrcPositions = {}; // targetUrl → [srcRelPos, ...]
+
+            links.forEach(({ href, relPos: srcRelPos }) => {
                 const match       = findMapperTermForHref(href, mapper);
                 if (!match) return;
                 const targetEntry = (mapper[match.term] || {})[language];
                 if (!targetEntry || !Array.isArray(targetEntry.translations)) return;
                 if (!paraMapper[match.term]) paraMapper[match.term] = {};
                 paraMapper[match.term][language] = targetEntry;
+
+                const targetUrl = targetEntry.link || href;
+                if (!hrefToSrcPositions[targetUrl]) hrefToSrcPositions[targetUrl] = [];
+                hrefToSrcPositions[targetUrl].push(srcRelPos);
             });
 
-            if (Object.keys(paraMapper).length) tasks.push({ idx, block, paraMapper });
+            if (Object.keys(paraMapper).length) tasks.push({ idx, block, paraMapper, hrefToSrcPositions });
         });
 
         if (!tasks.length) return;
 
         setRightLoading(true);
 
-        Promise.all(tasks.map(({ idx, block, paraMapper }) =>
+        Promise.all(tasks.map(({ idx, block, paraMapper, hrefToSrcPositions }) =>
             Promise.resolve($.ajax({
                 url: 'api/apply_links.php',
                 method: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify({ content: block.outerHTML, language, link_mapper: paraMapper }),
             }))
-            .then(res  => ({ idx, html: res.html || '' }))
-            .catch(()  => ({ idx, html: '' }))
+            .then(res  => ({ idx, html: res.html || '', hrefToSrcPositions }))
+            .catch(()  => ({ idx, html: '', hrefToSrcPositions: {} }))
         )).then(results => {
-            results.forEach(({ idx, html }) => {
+            results.forEach(({ idx, html, hrefToSrcPositions }) => {
                 if (!html) return;
+                // Trim extra link occurrences to match source count and position
+                const filtered = filterLinksByPosition(html, hrefToSrcPositions);
                 const block = blockArray[idx];
                 if (!block || !block.parentNode) return;
                 const wrap = document.createElement('div');
-                wrap.innerHTML = html;
+                wrap.innerHTML = filtered;
                 const newBlock = wrap.firstElementChild;
                 if (newBlock) block.parentNode.replaceChild(newBlock, block);
             });
@@ -313,6 +321,56 @@ function removeHeadingLinks(html) {
         h.querySelectorAll('a').forEach(a => a.replaceWith(document.createTextNode(a.textContent)));
     });
     return d.innerHTML;
+}
+
+// PHP may link ALL occurrences of a translated phrase in a block.
+// hrefToSrcPositions maps each target URL → array of source relPos values (one per
+// source link that maps to that URL in this paragraph).
+// We keep exactly that many occurrences, choosing the ones whose positions in the
+// target block are closest to the source positions.  Extras are unwrapped.
+function filterLinksByPosition(blockHtml, hrefToSrcPositions) {
+    const wrap = document.createElement('div');
+    wrap.innerHTML = blockHtml;
+
+    Object.entries(hrefToSrcPositions).forEach(([targetUrl, srcPositions]) => {
+        const anchors = Array.from(wrap.querySelectorAll('a[href]'))
+            .filter(a => a.getAttribute('href') === targetUrl);
+
+        if (anchors.length <= srcPositions.length) return; // nothing to trim
+
+        const totalLen = wrap.textContent.length || 1;
+
+        // Measure each anchor's relative position in the block
+        const anchorInfos = anchors.map(a => {
+            let charsBefore = 0;
+            const walker = document.createTreeWalker(wrap, NodeFilter.SHOW_TEXT);
+            let cur;
+            while ((cur = walker.nextNode())) {
+                if (a.contains(cur)) break;
+                charsBefore += cur.textContent.length;
+            }
+            return { a, pos: charsBefore / totalLen };
+        });
+
+        // Greedy assignment: for each source position pick the closest unused anchor
+        const keepSet = new Set();
+        [...srcPositions].forEach(srcPos => {
+            let best = null, bestDist = Infinity;
+            anchorInfos.forEach(info => {
+                if (keepSet.has(info.a)) return;
+                const d = Math.abs(info.pos - srcPos);
+                if (d < bestDist) { bestDist = d; best = info; }
+            });
+            if (best) keepSet.add(best.a);
+        });
+
+        // Unwrap the extra occurrences
+        anchorInfos.forEach(({ a }) => {
+            if (!keepSet.has(a)) a.replaceWith(document.createTextNode(a.textContent));
+        });
+    });
+
+    return wrap.innerHTML;
 }
 
 function renderPreview(rawHtml) {
@@ -731,7 +789,9 @@ function toggleSourceView() {
     }
 }
 
-// Parse HTML into flat list of block elements with their links
+// Parse HTML into flat list of block elements with their links.
+// Each link records `relPos` — the fraction (0–1) of block text that precedes it,
+// used later to place the translated anchor at roughly the same position.
 function parseSourceParagraphs(html) {
     const div = document.createElement('div');
     div.innerHTML = html;
@@ -739,13 +799,27 @@ function parseSourceParagraphs(html) {
     const blocks = div.querySelectorAll('p, li, h1, h2, h3, h4, h5, h6, blockquote, td, th');
 
     return Array.from(blocks).map((block, idx) => {
-        const links = Array.from(block.querySelectorAll('a[href]'))
-            .map(a => ({ href: a.getAttribute('href') || '', text: a.textContent.trim() }))
-            .filter(l => l.href && l.text);
+        const totalLen = block.textContent.length;
+
+        const links = Array.from(block.querySelectorAll('a[href]')).map(a => {
+            // Count text chars before this anchor to get its relative position
+            let charsBefore = 0;
+            const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+            let cur;
+            while ((cur = walker.nextNode())) {
+                if (a.contains(cur)) break;
+                charsBefore += cur.textContent.length;
+            }
+            return {
+                href:   a.getAttribute('href') || '',
+                text:   a.textContent.trim(),
+                relPos: totalLen > 0 ? charsBefore / totalLen : 0,
+            };
+        }).filter(l => l.href && l.text);
 
         return {
             idx,
-            tag: block.tagName.toLowerCase(),
+            tag:     block.tagName.toLowerCase(),
             preview: block.textContent.trim().substring(0, 70),
             links,
         };
