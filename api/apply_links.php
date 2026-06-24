@@ -182,7 +182,7 @@ function applyLinksToLine(string $line, array $termToUrl, int &$linksFound, arra
             $linksFound++;
             $matchedPhrases[$key] = true;
             $url    = htmlspecialchars($termToUrl[$key]['url']);
-            $result .= '<a href="' . $url . '" target="_blank" class="detected-link">'
+            $result .= '<a href="' . $url . '" class="detected-link">'
                      . htmlspecialchars($matchText) . '</a>';
         } else {
             $result .= htmlspecialchars($matchText);

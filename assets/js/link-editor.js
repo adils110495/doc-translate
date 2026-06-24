@@ -44,8 +44,14 @@ const LINK_EDITOR_LANGUAGES = [
 
 const SUPPORTED_LINK_LANGS = new Set(['en','da','nl','et','fi','de','is','lv','no','ro','ru','sv']);
 
+// Register Calibri with Quill's font whitelist so it appears in the dropdown.
+// Must run before any new Quill() calls.
+const QuillFont = Quill.import('formats/font');
+QuillFont.whitelist = ['calibri', 'serif', 'monospace'];
+Quill.register(QuillFont, true);
+
 const QUILL_TOOLBAR = [
-    [{ font: [] },  { size: ['small', false, 'large', 'huge'] }],
+    [{ font: ['calibri', 'serif', 'monospace'] },  { size: ['small', false, 'large', 'huge'] }],
     [{ header: [1, 2, 3, 4, 5, 6, false] }],
     ['bold', 'italic', 'underline', 'strike'],
     [{ color: [] }, { background: [] }],
@@ -217,130 +223,149 @@ function updatePreview() {
     // Headings never receive links.
     if (sourceParaData && sourceParaData.some(p => p.links.length > 0)) {
         const mapper = customLinkMapper || window.DEFAULT_LINK_MAPPER;
-        if (!mapper) return;
+        console.log('[LE] source-content mode — mapper loaded:', !!mapper,
+            '| source paras with links:', sourceParaData.filter(p => p.links.length).length);
 
-        const div = document.createElement('div');
-        div.innerHTML = content;
-        const blockArray = Array.from(
-            div.querySelectorAll('p, li, h1, h2, h3, h4, h5, h6, blockquote, td, th')
-        );
+        if (mapper) {
+            const div = document.createElement('div');
+            div.innerHTML = content;
+            const blockArray = Array.from(
+                div.querySelectorAll('p, li, h1, h2, h3, h4, h5, h6, blockquote, td, th')
+            );
 
-        const tasks = [];
-        sourceParaData.forEach(({ idx, links }) => {
-            if (!links.length) return;
-            const block = blockArray[idx];
-            if (!block || /^h[1-6]$/i.test(block.tagName)) return;
+            const tasks = [];
+            sourceParaData.forEach(({ idx, links }) => {
+                if (!links.length) return;
+                // Do NOT filter by block type here — headings and missing blocks both
+                // need tasks so Phase-2 fallback can find the phrase in a non-heading block.
 
-            const paraMapper = {};
-            const hrefToSrcPositions = {};
+                const paraMapper = {};
+                const hrefToSrcPositions = {};
 
-            links.forEach(({ href, relPos: srcRelPos }) => {
-                const match       = findMapperTermForHref(href, mapper);
-                if (!match) return;
-                const targetEntry = (mapper[match.term] || {})[language];
-                if (!targetEntry || !Array.isArray(targetEntry.translations)) return;
-                if (!paraMapper[match.term]) paraMapper[match.term] = {};
-                paraMapper[match.term][language] = targetEntry;
-                const targetUrl = targetEntry.link || href;
-                if (!hrefToSrcPositions[targetUrl]) hrefToSrcPositions[targetUrl] = [];
-                hrefToSrcPositions[targetUrl].push(srcRelPos);
+                links.forEach(({ href, relPos: srcRelPos }) => {
+                    const match = findMapperTermForHref(href, mapper);
+                    console.log('[LE]   src idx', idx, 'href', href, '→', match ? match.term + '/' + match.lang : 'NO MATCH');
+                    if (!match) return;
+                    const targetEntry = (mapper[match.term] || {})[language];
+                    if (!targetEntry || !Array.isArray(targetEntry.translations)) return;
+                    if (!paraMapper[match.term]) paraMapper[match.term] = {};
+                    paraMapper[match.term][language] = targetEntry;
+                    const targetUrl = targetEntry.link || href;
+                    if (!hrefToSrcPositions[targetUrl]) hrefToSrcPositions[targetUrl] = [];
+                    hrefToSrcPositions[targetUrl].push(srcRelPos);
+                });
+
+                if (Object.keys(paraMapper).length) tasks.push({ idx, paraMapper, hrefToSrcPositions });
             });
 
-            if (Object.keys(paraMapper).length) tasks.push({ idx, paraMapper, hrefToSrcPositions });
-        });
+            console.log('[LE] tasks built:', tasks.length, '| target blocks:', blockArray.length);
 
-        if (!tasks.length) return;
-
-        // Helper: apply a PHP-returned block HTML into the live div, trimming
-        // extra link occurrences to match source count + position.
-        // IMPORTANT: we track the ORIGINAL block node so Phase-2 candidates
-        // can correctly detect "already used" blocks via usedBlocks.has(originalNode).
-        const usedBlocks = new Set();
-        function applyBlockHtml(block, html, hrefToSrcPositions) {
-            const filtered = filterLinksByPosition(html, hrefToSrcPositions);
-            const wrap = document.createElement('div');
-            wrap.innerHTML = filtered;
-            const newBlock = wrap.firstElementChild;
-            if (newBlock && block.parentNode) {
-                block.parentNode.replaceChild(newBlock, block);
-            }
-            usedBlocks.add(block); // always mark original as used (even if DOM swap failed)
-        }
-
-        // PHP call helper returning { html, linksFound }
-        function phpApply(blockEl, paraMapper) {
-            return Promise.resolve($.ajax({
-                url: 'api/apply_links.php',
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ content: blockEl.outerHTML, language, link_mapper: paraMapper }),
-            })).then(res => ({ html: res.html || '', linksFound: res.links_found || 0 }))
-               .catch(() => ({ html: '', linksFound: 0 }));
-        }
-
-        setRightLoading(true);
-
-        // Phase 1 — exact-index blocks, all in parallel
-        Promise.all(tasks.map(task =>
-            phpApply(blockArray[task.idx], task.paraMapper)
-            .then(res => ({ task, res }))
-        )).then(phase1Results => {
-            const needFallback = [];
-
-            phase1Results.forEach(({ task, res }) => {
-                const block = blockArray[task.idx];
-                if (res.linksFound > 0 && block && !usedBlocks.has(block)) {
-                    applyBlockHtml(block, res.html, task.hrefToSrcPositions);
-                } else {
-                    needFallback.push(task);
+            if (tasks.length > 0) {
+                // Helper: apply PHP-returned block HTML into the live div.
+                // Track the ORIGINAL block (not replacement) so Phase-2 sees it as used.
+                const usedBlocks = new Set();
+                function applyBlockHtml(block, html, hrefToSrcPositions) {
+                    const filtered = filterLinksByPosition(html, hrefToSrcPositions);
+                    const wrap = document.createElement('div');
+                    wrap.innerHTML = filtered;
+                    const newBlock = wrap.firstElementChild;
+                    if (newBlock && block.parentNode) {
+                        block.parentNode.replaceChild(newBlock, block);
+                    }
+                    usedBlocks.add(block);
                 }
-            });
 
-            // Phase 2 — sequential fallback.
-            // First try ±1…±8 (nearby), then if still no match try ALL remaining
-            // blocks in document order (last resort for heavily restructured translations).
-            function nearbyOffsets(idx) {
-                const offs = [];
-                for (let d = 1; d <= 8; d++) { offs.push(-d, d); }
-                return offs.map(o => blockArray[idx + o]);
-            }
+                function phpApply(blockEl, pMapper) {
+                    return Promise.resolve($.ajax({
+                        url: 'api/apply_links.php',
+                        method: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ content: blockEl.outerHTML, language, link_mapper: pMapper }),
+                    })).then(res => ({ html: res.html || '', linksFound: res.links_found || 0 }))
+                       .catch(err => { console.error('[LE] phpApply error', err); return { html: '', linksFound: 0 }; });
+                }
 
-            function runFallback(i) {
-                if (i >= needFallback.length) { finalize(); return; }
-                const task = needFallback[i];
+                setRightLoading(true);
 
-                // Candidates: nearby first, then all remaining (deduped)
-                const nearby  = nearbyOffsets(task.idx);
-                const allRest = blockArray.filter(b => !nearby.includes(b));
-                const candidates = [...nearby, ...allRest]
-                    .filter(b => b && !/^h[1-6]$/i.test(b.tagName) && !usedBlocks.has(b));
+                // Phase 1: skip undefined blocks (idx out of target range) and heading
+                // blocks — both push directly to fallback so Phase 2 can find the phrase
+                // in any non-heading block across the full target article.
+                Promise.all(tasks.map(task => {
+                    const b = blockArray[task.idx];
+                    if (!b || /^h[1-6]$/i.test(b.tagName)) {
+                        return Promise.resolve({ task, res: { html: '', linksFound: -1 } });
+                    }
+                    return phpApply(b, task.paraMapper).then(res => ({ task, res }));
+                })).then(phase1Results => {
+                    const needFallback = [];
 
-                function tryCandidates(ci) {
-                    if (ci >= candidates.length) { runFallback(i + 1); return; }
-                    const block = candidates[ci];
-                    phpApply(block, task.paraMapper).then(res => {
-                        if (res.linksFound > 0) {
-                            applyBlockHtml(block, res.html, task.hrefToSrcPositions);
-                            runFallback(i + 1);
+                    phase1Results.forEach(({ task, res }) => {
+                        const block = blockArray[task.idx];
+                        if (res.linksFound === -1) {
+                            console.log('[LE] phase1 idx', task.idx, ': heading/out-of-range → fallback');
                         } else {
-                            tryCandidates(ci + 1);
+                            console.log('[LE] phase1 idx', task.idx, ': linksFound =', res.linksFound);
+                        }
+                        if (res.linksFound > 0 && block && !usedBlocks.has(block)) {
+                            applyBlockHtml(block, res.html, task.hrefToSrcPositions);
+                        } else {
+                            needFallback.push(task);
                         }
                     });
-                }
-                tryCandidates(0);
+
+                    console.log('[LE] phase1 done — fallback queue:', needFallback.length);
+
+                    // Phase 2 — nearby offsets (±1…±8), then ALL remaining blocks.
+                    function nearbyOffsets(idx) {
+                        const offs = [];
+                        for (let d = 1; d <= 8; d++) { offs.push(-d, d); }
+                        return offs.map(o => blockArray[idx + o]);
+                    }
+
+                    function runFallback(i) {
+                        if (i >= needFallback.length) { finalize(); return; }
+                        const task = needFallback[i];
+                        const nearby  = nearbyOffsets(task.idx);
+                        const allRest = blockArray.filter(b => !nearby.includes(b));
+                        const candidates = [...nearby, ...allRest]
+                            .filter(b => b && !/^h[1-6]$/i.test(b.tagName) && !usedBlocks.has(b));
+
+                        console.log('[LE] fallback idx', task.idx, ': candidates =', candidates.length);
+
+                        function tryCandidates(ci) {
+                            if (ci >= candidates.length) { runFallback(i + 1); return; }
+                            const block = candidates[ci];
+                            phpApply(block, task.paraMapper).then(res => {
+                                if (res.linksFound > 0) {
+                                    applyBlockHtml(block, res.html, task.hrefToSrcPositions);
+                                    runFallback(i + 1);
+                                } else {
+                                    tryCandidates(ci + 1);
+                                }
+                            });
+                        }
+                        tryCandidates(0);
+                    }
+
+                    function finalize() {
+                        const rawHtml = div.innerHTML;
+                        $('#editor-right').data('raw-html', rawHtml);
+                        renderPreview(rawHtml);
+                        updateBadge(countLinksInHtml(rawHtml));
+                        setRightLoading(false);
+                        console.log('[LE] finalize: total links in output =', countLinksInHtml(rawHtml));
+                    }
+
+                    runFallback(0);
+                }).catch(err => { console.error('[LE] phase1 error', err); setRightLoading(false); });
+
+                return; // only exit here — after async work is started
             }
 
-            function finalize() {
-                const rawHtml = div.innerHTML;
-                $('#editor-right').data('raw-html', rawHtml);
-                renderPreview(rawHtml);
-                updateBadge(countLinksInHtml(rawHtml));
-                setRightLoading(false);
-            }
-
-            runFallback(0);
-        }).catch(() => setRightLoading(false));
-        return;
+            console.warn('[LE] 0 tasks — falling through to normal mode (URL mismatch or no translatable links)');
+        } else {
+            console.warn('[LE] mapper not loaded yet — falling through to normal mode');
+        }
     }
 
     // ── Normal mode: use server-side link mapper ───────────────────────────────
