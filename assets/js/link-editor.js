@@ -209,17 +209,49 @@ function updatePreview() {
         return;
     }
 
-    // ── Source-content mode: bypass API, apply source links only ──────────────
-    // This guarantees the output has the exact same link count and paragraph
-    // positions as the source content.
+    // ── Source-content mode: apply only source-matched terms via PHP API ────────
+    // Builds a restricted mapper (only terms from source links, target language
+    // only) then calls apply_links.php — same Unicode-safe path as normal mode.
+    // Links are never injected into headings.
     if (sourceParaData && sourceParaData.some(p => p.links.length > 0)) {
+        const mapper = customLinkMapper || window.DEFAULT_LINK_MAPPER;
+        if (!mapper) return;
+
+        const sourceMapper = {};
+        sourceParaData.forEach(({ links }) => {
+            links.forEach(({ href }) => {
+                const match = findMapperTermForHref(href, mapper);
+                if (!match) return;
+                const termData    = mapper[match.term];
+                const targetEntry = termData && termData[language];
+                if (!targetEntry || !Array.isArray(targetEntry.translations)) return;
+                if (!sourceMapper[match.term]) sourceMapper[match.term] = {};
+                if (!sourceMapper[match.term][language]) {
+                    sourceMapper[match.term][language] = targetEntry;
+                }
+            });
+        });
+
+        if (!Object.keys(sourceMapper).length) return;
+
         setRightLoading(true);
-        const rawHtml    = applySourceLinksToTarget(content, sourceParaData, language);
-        const linkCount  = countLinksInHtml(rawHtml);
-        $('#editor-right').data('raw-html', rawHtml);
-        renderPreview(rawHtml);
-        updateBadge(linkCount);
-        setRightLoading(false);
+        $.ajax({
+            url: 'api/apply_links.php',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ content, language, link_mapper: sourceMapper }),
+            success(res) {
+                let rawHtml = res.html || '';
+                rawHtml = removeHeadingLinks(rawHtml);
+                $('#editor-right').data('raw-html', rawHtml);
+                renderPreview(rawHtml);
+                updateBadge(countLinksInHtml(rawHtml));
+            },
+            error() {
+                quillRight.root.innerHTML = '<p><em style="color:#e74c3c">Failed to apply links.</em></p>';
+            },
+            complete() { setRightLoading(false); },
+        });
         return;
     }
 
@@ -251,6 +283,15 @@ function countLinksInHtml(html) {
     const d = document.createElement('div');
     d.innerHTML = html;
     return d.querySelectorAll('a[href]').length;
+}
+
+function removeHeadingLinks(html) {
+    const d = document.createElement('div');
+    d.innerHTML = html;
+    d.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(h => {
+        h.querySelectorAll('a').forEach(a => a.replaceWith(document.createTextNode(a.textContent)));
+    });
+    return d.innerHTML;
 }
 
 function renderPreview(rawHtml) {
@@ -796,7 +837,7 @@ function applySourceLinksToTarget(targetHtml, sourceParagraphs, language) {
         if (!links.length) return;
         const list = [];
 
-        links.forEach(({ href }) => {
+        links.forEach(({ href, text }) => {
             const match = findMapperTermForHref(href, mapper);
             if (!match) return;
 
@@ -804,11 +845,22 @@ function applySourceLinksToTarget(targetHtml, sourceParagraphs, language) {
             const targetEntry = termData && termData[language];
             if (!targetEntry || !Array.isArray(targetEntry.translations)) return;
 
-            const url     = targetEntry.link || href;
-            // Longest phrase first; NFC-normalise for consistent Unicode matching
+            const url = targetEntry.link || href;
+
+            // Sort target phrases so the ones closest in word-count to the source
+            // anchor come first (single-word anchor "miss" → try "glip" before
+            // "gået glip af"), then break ties with length (longer first for
+            // better specificity within the same word-count tier).
+            const srcWords = (text || '').trim().split(/\s+/).length;
             const phrases = targetEntry.translations
                 .slice()
-                .sort((a, b) => b.length - a.length)
+                .sort((a, b) => {
+                    const aW = a.trim().split(/\s+/).length;
+                    const bW = b.trim().split(/\s+/).length;
+                    const diff = Math.abs(aW - srcWords) - Math.abs(bW - srcWords);
+                    if (diff !== 0) return diff;        // closer word-count wins
+                    return b.length - a.length;         // longer wins in same tier
+                })
                 .map(p => p.toLowerCase().normalize('NFC'));
 
             list.push({ url, phrases });
